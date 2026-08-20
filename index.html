@@ -62,6 +62,60 @@
         </div>
     </nav>
 
+    <!-- Teacher Auth Modal -->
+    <div id="teacherAuthModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden-view p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-indigo-600"></i> 교사용 인증
+                </h3>
+                <button id="closeAuthModalBtn" type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="teacherAuthForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">교사용 비밀번호</label>
+                    <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력 (초기: 1234)" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1 font-medium">* 초기 비밀번호는 <span class="text-indigo-600 font-bold">1234</span> 입니다.</p>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer">취소</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition shadow-sm cursor-pointer">확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teacher Password Change Modal -->
+    <div id="changePassModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden-view p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-indigo-600"></i> 교사 비밀번호 변경
+                </h3>
+                <button id="closeChangePassModalBtn" type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="changePassForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+                    <input type="password" id="currentPassInput" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                    <input type="password" id="newPassInput" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="cancelChangePassBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer">취소</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition shadow-sm cursor-pointer">비밀번호 변경</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <main class="flex-grow overflow-y-auto pb-20">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -73,12 +127,15 @@
                     <button id="tab-notice" class="pb-3 px-1 tab-inactive cursor-pointer">알림사항 관리</button>
                     <button id="tab-manage" class="pb-3 px-1 tab-inactive cursor-pointer">전체 학생 관리</button>
                 </div>
-                <!-- GAS Web App URL Config Bar -->
-                <div class="pb-3 flex items-center gap-2 text-xs">
+                <!-- GAS Web App URL Config & Password Change -->
+                <div class="pb-3 flex flex-wrap items-center gap-2 text-xs">
                     <span class="text-gray-500 font-medium"><i class="fa-solid fa-link text-indigo-500"></i> GAS URL:</span>
                     <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" 
-                        class="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none w-56 text-xs">
+                        class="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none w-52 text-xs">
                     <button id="saveGasBtn" class="bg-gray-800 hover:bg-black text-white px-2.5 py-1 rounded transition cursor-pointer">저장</button>
+                    <button id="openChangePassBtn" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded transition cursor-pointer flex items-center gap-1 font-medium ml-1">
+                        <i class="fa-solid fa-key"></i> 비밀번호 변경
+                    </button>
                 </div>
             </div>
 
@@ -411,7 +468,8 @@
         // --- State ---
         let currentMode = 'student'; // 'student' or 'teacher'
         let isScorePublished = false;
-        let gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxnQ2Hs5I0UKh5Tf-f8IrISeD429wz8L1BDSisaUWCL0MlvuGm5ILbgk2ASCx3UsZA/exec'; // Google Apps Script Web App URL
+        let gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxAap6enqyRUfs2S3SCq2EeHN1bjpfa6tbO-7J70vv7Mg7EWx4ck_qUuNkPEY1vs2LT/exec'; // Google Apps Script Web App URL
+        let teacherPassword = localStorage.getItem('teacherPassword') || '1234'; // Default teacher password
 
         // Mock Database (Fallback)
         let mockNotices = [
@@ -443,6 +501,17 @@
                 modeToggleBtn.addEventListener('click', toggleMode);
             }
 
+            // Bind Teacher Auth Modal Controls
+            document.getElementById('teacherAuthForm')?.addEventListener('submit', handleTeacherAuthSubmit);
+            document.getElementById('closeAuthModalBtn')?.addEventListener('click', closeTeacherAuthModal);
+            document.getElementById('cancelAuthBtn')?.addEventListener('click', closeTeacherAuthModal);
+
+            // Bind Change Password Modal Controls
+            document.getElementById('openChangePassBtn')?.addEventListener('click', openChangePassModal);
+            document.getElementById('closeChangePassModalBtn')?.addEventListener('click', closeChangePassModal);
+            document.getElementById('cancelChangePassBtn')?.addEventListener('click', closeChangePassModal);
+            document.getElementById('changePassForm')?.addEventListener('submit', handleChangePasswordSubmit);
+
             // Bind Teacher Tabs
             document.getElementById('tab-record')?.addEventListener('click', () => switchTab('record'));
             document.getElementById('tab-notice')?.addEventListener('click', () => switchTab('notice'));
@@ -471,6 +540,60 @@
 
         // Mode Switching Function (Student <-> Teacher)
         function toggleMode() {
+            if (currentMode === 'student') {
+                openTeacherAuthModal();
+            } else {
+                switchToStudentMode();
+            }
+        }
+
+        // Open/Close Teacher Auth Modal
+        function openTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            const passInput = document.getElementById('teacherPasswordInput');
+            if (modal) modal.classList.remove('hidden-view');
+            if (passInput) {
+                passInput.value = '';
+                passInput.focus();
+            }
+        }
+
+        function closeTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            if (modal) modal.classList.add('hidden-view');
+        }
+
+        // Handle Teacher Auth Form Submission
+        function handleTeacherAuthSubmit(e) {
+            e.preventDefault();
+            const passInput = document.getElementById('teacherPasswordInput').value.trim();
+
+            if (passInput === teacherPassword) {
+                closeTeacherAuthModal();
+                switchToTeacherMode();
+                showToast('교사용 모드로 전환되었습니다.');
+            } else {
+                showToast('교사용 비밀번호가 올바르지 않습니다.', true);
+            }
+        }
+
+        function switchToTeacherMode() {
+            currentMode = 'teacher';
+            const btn = document.getElementById('modeToggleBtn');
+            const btnText = document.getElementById('modeToggleText');
+            const teacherTabs = document.getElementById('teacherTabs');
+            const studentView = document.getElementById('studentView');
+
+            btn.className = 'text-sm bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+            if (btnText) btnText.textContent = '학생용으로 전환';
+            
+            teacherTabs?.classList.remove('hidden-view');
+            studentView?.classList.add('hidden-view');
+            switchTab('record');
+        }
+
+        function switchToStudentMode() {
+            currentMode = 'student';
             const btn = document.getElementById('modeToggleBtn');
             const btnText = document.getElementById('modeToggleText');
             const teacherTabs = document.getElementById('teacherTabs');
@@ -479,27 +602,49 @@
             const noticeTab = document.getElementById('noticeTab');
             const manageTab = document.getElementById('manageTab');
 
-            if (currentMode === 'student') {
-                currentMode = 'teacher';
-                btn.className = 'text-sm bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
-                if (btnText) btnText.textContent = '학생용으로 전환';
-                
-                teacherTabs?.classList.remove('hidden-view');
-                studentView?.classList.add('hidden-view');
-                switchTab('record');
-                showToast('교사용 모드로 전환되었습니다.');
-            } else {
-                currentMode = 'student';
-                btn.className = 'text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
-                if (btnText) btnText.textContent = '교사용으로 전환';
-                
-                teacherTabs?.classList.add('hidden-view');
-                studentView?.classList.remove('hidden-view');
-                recordTab?.classList.add('hidden-view');
-                noticeTab?.classList.add('hidden-view');
-                manageTab?.classList.add('hidden-view');
-                showToast('학생용 모드로 전환되었습니다.');
+            btn.className = 'text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+            if (btnText) btnText.textContent = '교사용으로 전환';
+            
+            teacherTabs?.classList.add('hidden-view');
+            studentView?.classList.remove('hidden-view');
+            recordTab?.classList.add('hidden-view');
+            noticeTab?.classList.add('hidden-view');
+            manageTab?.classList.add('hidden-view');
+            showToast('학생용 모드로 전환되었습니다.');
+        }
+
+        // Change Teacher Password Modal Functions
+        function openChangePassModal() {
+            const modal = document.getElementById('changePassModal');
+            if (modal) modal.classList.remove('hidden-view');
+            document.getElementById('currentPassInput').value = '';
+            document.getElementById('newPassInput').value = '';
+        }
+
+        function closeChangePassModal() {
+            const modal = document.getElementById('changePassModal');
+            if (modal) modal.classList.add('hidden-view');
+        }
+
+        function handleChangePasswordSubmit(e) {
+            e.preventDefault();
+            const curr = document.getElementById('currentPassInput').value.trim();
+            const next = document.getElementById('newPassInput').value.trim();
+
+            if (curr !== teacherPassword) {
+                showToast('현재 비밀번호가 불일치합니다.', true);
+                return;
             }
+
+            if (!next) {
+                showToast('새 비밀번호를 입력해 주세요.', true);
+                return;
+            }
+
+            teacherPassword = next;
+            localStorage.setItem('teacherPassword', next);
+            closeChangePassModal();
+            showToast('교사 비밀번호가 성공적으로 변경되었습니다.');
         }
 
         // Tab Switching for Teacher View
