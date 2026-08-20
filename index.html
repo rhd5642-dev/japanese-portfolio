@@ -53,8 +53,9 @@
                     <span class="font-bold text-xl tracking-tight text-gray-900">일본어 수업 포트폴리오</span>
                 </div>
                 <div class="flex items-center">
-                    <button id="modeToggleBtn" onclick="toggleMode()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3.5 rounded-lg transition font-medium cursor-pointer shadow-sm">
-                        교사용으로 전환
+                    <button id="modeToggleBtn" type="button" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span id="modeToggleText">교사용으로 전환</span>
                     </button>
                 </div>
             </div>
@@ -68,16 +69,16 @@
             <!-- Tabs (Teacher Mode Only) -->
             <div id="teacherTabs" class="hidden-view mb-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
                 <div class="flex gap-6">
-                    <button onclick="switchTab('record')" id="tab-record" class="pb-3 px-1 tab-active cursor-pointer">기록 및 도장 부여</button>
-                    <button onclick="switchTab('notice')" id="tab-notice" class="pb-3 px-1 tab-inactive cursor-pointer">알림사항 관리</button>
-                    <button onclick="switchTab('manage')" id="tab-manage" class="pb-3 px-1 tab-inactive cursor-pointer">전체 학생 관리</button>
+                    <button id="tab-record" class="pb-3 px-1 tab-active cursor-pointer">기록 및 도장 부여</button>
+                    <button id="tab-notice" class="pb-3 px-1 tab-inactive cursor-pointer">알림사항 관리</button>
+                    <button id="tab-manage" class="pb-3 px-1 tab-inactive cursor-pointer">전체 학생 관리</button>
                 </div>
                 <!-- GAS Web App URL Config Bar -->
                 <div class="pb-3 flex items-center gap-2 text-xs">
                     <span class="text-gray-500 font-medium"><i class="fa-solid fa-link text-indigo-500"></i> GAS URL:</span>
                     <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" 
-                        class="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none w-56 text-xs" onchange="saveGasUrl()">
-                    <button onclick="saveGasUrl()" class="bg-gray-800 hover:bg-black text-white px-2.5 py-1 rounded transition cursor-pointer">저장</button>
+                        class="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none w-56 text-xs">
+                    <button id="saveGasBtn" class="bg-gray-800 hover:bg-black text-white px-2.5 py-1 rounded transition cursor-pointer">저장</button>
                 </div>
             </div>
 
@@ -90,9 +91,9 @@
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800">
                         <i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기
                     </h2>
-                    <form id="searchForm" onsubmit="handleSearch(event)" class="flex flex-col gap-3">
+                    <form id="searchForm" class="flex flex-col gap-3">
                         <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required oninput="autoFillStudentInfo()"
+                            <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required
                                 class="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
                             
                             <input type="text" id="searchClass" placeholder="반 (자동)" required readonly
@@ -118,7 +119,7 @@
                         <div class="flex-grow">
                             <h3 class="font-bold text-indigo-900 mb-2 text-sm">선생님의 알림</h3>
                             <ul id="noticeList" class="text-sm text-indigo-800 space-y-3">
-                                <!-- Notices will be injected here -->
+                                <!-- Notices injected here -->
                             </ul>
                         </div>
                     </div>
@@ -195,7 +196,6 @@
 
                     <!-- Stamp Boards (도장판) -->
                     <div class="space-y-4">
-                        <!-- 참 잘했어요 -->
                         <div class="bg-white rounded-xl shadow-sm border border-pink-100 p-5">
                             <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
                                 <span class="text-xl">💮</span> 참 잘했어요 (참여도장)
@@ -203,7 +203,6 @@
                             <div id="goodStampBoard" class="flex flex-wrap gap-2"></div>
                         </div>
                         
-                        <!-- 분발하세요 -->
                         <div class="bg-white rounded-xl shadow-sm border border-blue-100 p-5">
                             <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
                                 <span class="text-xl">😢</span> 좀 더 분발하세요 (참여도장)
@@ -211,7 +210,6 @@
                             <div id="effortStampBoard" class="flex flex-wrap gap-2"></div>
                         </div>
 
-                        <!-- 학습지 완료 -->
                         <div class="bg-white rounded-xl shadow-sm border border-green-100 p-5">
                             <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
                                 <span class="text-xl">📝</span> 학습지 완료
@@ -252,7 +250,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto">
                     <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-3">기록 및 도장 부여</h2>
                     
-                    <form id="addRecordForm" onsubmit="handleAddRecord(event)" class="space-y-5">
+                    <form id="addRecordForm" class="space-y-5">
                         
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -278,7 +276,7 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div class="col-span-1">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                                <input type="text" id="recordName" placeholder="홍길동" required oninput="autoFillTeacherForm()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <input type="text" id="recordName" placeholder="홍길동" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div class="col-span-1">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">학번 (자동)</label>
@@ -294,32 +292,32 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">평가 항목</label>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="good" class="sr-only" onchange="toggleScoreInput()" required>
+                                    <input type="radio" name="category" value="good" class="sr-only" required>
                                     <span class="text-2xl">💮</span>
                                     <span class="text-sm font-medium">참 잘했어요</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="effort" class="sr-only" onchange="toggleScoreInput()">
+                                    <input type="radio" name="category" value="effort" class="sr-only">
                                     <span class="text-2xl">😢</span>
                                     <span class="text-sm font-medium text-center">좀 더 분발하세요</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-green-500 has-[:checked]:bg-green-50 transition">
-                                    <input type="radio" name="category" value="worksheet" class="sr-only" onchange="toggleScoreInput()">
+                                    <input type="radio" name="category" value="worksheet" class="sr-only">
                                     <span class="text-2xl">📝</span>
                                     <span class="text-sm font-medium">학습지 완료</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="participationScore" class="sr-only" onchange="toggleScoreInput()">
+                                    <input type="radio" name="category" value="participationScore" class="sr-only">
                                     <i class="fa-solid fa-hand-sparkles text-2xl text-blue-500 mt-1"></i>
                                     <span class="text-sm font-medium">참여 점수 부여</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="worksheetScore" class="sr-only" onchange="toggleScoreInput()">
+                                    <input type="radio" name="category" value="worksheetScore" class="sr-only">
                                     <i class="fa-solid fa-file-signature text-2xl text-green-500 mt-1"></i>
                                     <span class="text-sm font-medium">학습지 점수 부여</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 transition">
-                                    <input type="radio" name="category" value="score" class="sr-only" onchange="toggleScoreInput()">
+                                    <input type="radio" name="category" value="score" class="sr-only">
                                     <i class="fa-solid fa-star text-2xl text-purple-500 mt-1"></i>
                                     <span class="text-sm font-medium">기타 수행 점수</span>
                                 </label>
@@ -343,7 +341,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto">
                     <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-3">학생 알림사항 등록</h2>
                     <p class="text-sm text-gray-500 mb-4">등록한 알림은 학생들의 조회 화면 상단에 표시됩니다.</p>
-                    <form id="addNoticeForm" onsubmit="handleAddNotice(event)" class="space-y-4">
+                    <form id="addNoticeForm" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">표시될 내용</label>
                             <textarea id="noticeContent" rows="3" required placeholder="예: 다음 주 화요일은 히라가나 수행평가가 있습니다." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
@@ -369,11 +367,11 @@
                             <div class="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
                                 <span class="text-sm font-bold text-gray-700">학생에게 점수 공개</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="publishToggle" class="sr-only peer" onchange="toggleScorePublish()">
+                                    <input type="checkbox" id="publishToggle" class="sr-only peer">
                                     <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
                                 </label>
                             </div>
-                            <button onclick="updateOverviewTable()" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2 px-4 rounded-lg border border-indigo-200 transition font-medium flex items-center cursor-pointer">
+                            <button id="refreshOverviewBtn" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2 px-4 rounded-lg border border-indigo-200 transition font-medium flex items-center cursor-pointer">
                                 <i class="fa-solid fa-arrows-rotate mr-1"></i> 새로고침
                             </button>
                         </div>
@@ -413,7 +411,7 @@
         // --- State ---
         let currentMode = 'student'; // 'student' or 'teacher'
         let isScorePublished = false;
-        let gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbworxa5i57uR58HnKIIV51o2BSsf2Yl1z5InQuc1nWVh-p7lUB_RoFtSTVNW9YRlRrb/exec'; // Google Apps Script Web App URL
+        let gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxnQ2Hs5I0UKh5Tf-f8IrISeD429wz8L1BDSisaUWCL0MlvuGm5ILbgk2ASCx3UsZA/exec'; // Google Apps Script Web App URL
 
         // Mock Database (Fallback)
         let mockNotices = [
@@ -434,11 +432,37 @@
             '10103': { classNum: '2반', id: '10103', name: '이후지', password: '10103', goodStamps: 0, effortStamps: 2, worksheetStamps: 0, participationScore: 0, worksheetScore: 0, score: 0, records: [] }
         };
 
-        // Initialize
+        // DOM Initialization
         document.addEventListener('DOMContentLoaded', () => {
             const dateInput = document.getElementById('recordDate');
             if (dateInput) dateInput.valueAsDate = new Date();
             
+            // Bind Mode Toggle Button
+            const modeToggleBtn = document.getElementById('modeToggleBtn');
+            if (modeToggleBtn) {
+                modeToggleBtn.addEventListener('click', toggleMode);
+            }
+
+            // Bind Teacher Tabs
+            document.getElementById('tab-record')?.addEventListener('click', () => switchTab('record'));
+            document.getElementById('tab-notice')?.addEventListener('click', () => switchTab('notice'));
+            document.getElementById('tab-manage')?.addEventListener('click', () => switchTab('manage'));
+
+            // Bind Forms & Buttons
+            document.getElementById('searchForm')?.addEventListener('submit', handleSearch);
+            document.getElementById('searchName')?.addEventListener('input', autoFillStudentInfo);
+            document.getElementById('recordName')?.addEventListener('input', autoFillTeacherForm);
+            document.getElementById('saveGasBtn')?.addEventListener('click', saveGasUrl);
+            document.getElementById('addRecordForm')?.addEventListener('submit', handleAddRecord);
+            document.getElementById('addNoticeForm')?.addEventListener('submit', handleAddNotice);
+            document.getElementById('publishToggle')?.addEventListener('change', toggleScorePublish);
+            document.getElementById('refreshOverviewBtn')?.addEventListener('click', updateOverviewTable);
+
+            // Bind Category Radio Buttons
+            document.querySelectorAll('input[name="category"]').forEach(radio => {
+                radio.addEventListener('change', toggleScoreInput);
+            });
+
             loadSavedGasUrl();
             fetchNotices();
             fetchPublishStatus();
@@ -448,6 +472,7 @@
         // Mode Switching Function (Student <-> Teacher)
         function toggleMode() {
             const btn = document.getElementById('modeToggleBtn');
+            const btnText = document.getElementById('modeToggleText');
             const teacherTabs = document.getElementById('teacherTabs');
             const studentView = document.getElementById('studentView');
             const recordTab = document.getElementById('recordTab');
@@ -456,18 +481,24 @@
 
             if (currentMode === 'student') {
                 currentMode = 'teacher';
-                btn.textContent = '학생용으로 전환';
-                teacherTabs.classList.remove('hidden-view');
-                studentView.classList.add('hidden-view');
+                btn.className = 'text-sm bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+                if (btnText) btnText.textContent = '학생용으로 전환';
+                
+                teacherTabs?.classList.remove('hidden-view');
+                studentView?.classList.add('hidden-view');
                 switchTab('record');
+                showToast('교사용 모드로 전환되었습니다.');
             } else {
                 currentMode = 'student';
-                btn.textContent = '교사용으로 전환';
-                teacherTabs.classList.add('hidden-view');
-                studentView.classList.remove('hidden-view');
-                recordTab.classList.add('hidden-view');
-                noticeTab.classList.add('hidden-view');
-                manageTab.classList.add('hidden-view');
+                btn.className = 'text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+                if (btnText) btnText.textContent = '교사용으로 전환';
+                
+                teacherTabs?.classList.add('hidden-view');
+                studentView?.classList.remove('hidden-view');
+                recordTab?.classList.add('hidden-view');
+                noticeTab?.classList.add('hidden-view');
+                manageTab?.classList.add('hidden-view');
+                showToast('학생용 모드로 전환되었습니다.');
             }
         }
 
@@ -530,12 +561,14 @@
             const scoreInput = document.getElementById('recordScore');
 
             if (category === 'participationScore' || category === 'worksheetScore' || category === 'score') {
-                container.classList.remove('hidden-view');
-                scoreInput.required = true;
+                container?.classList.remove('hidden-view');
+                if (scoreInput) scoreInput.required = true;
             } else {
-                container.classList.add('hidden-view');
-                scoreInput.required = false;
-                scoreInput.value = '';
+                container?.classList.add('hidden-view');
+                if (scoreInput) {
+                    scoreInput.required = false;
+                    scoreInput.value = '';
+                }
             }
         }
 
@@ -587,14 +620,15 @@
         function renderNotices() {
             const board = document.getElementById('noticeBoard');
             const list = document.getElementById('noticeList');
+            if (!list) return;
             list.innerHTML = '';
 
             if (!mockNotices || mockNotices.length === 0) {
-                board.classList.add('hidden-view');
+                board?.classList.add('hidden-view');
                 return;
             }
 
-            board.classList.remove('hidden-view');
+            board?.classList.remove('hidden-view');
             mockNotices.forEach(n => {
                 const li = document.createElement('li');
                 li.className = "flex flex-col gap-1 border-b border-indigo-100/60 pb-2 last:border-0 last:pb-0";
@@ -678,7 +712,7 @@
 
         // Render Student Dashboard
         function renderStudentDashboard(data) {
-            document.getElementById('dashboardContent').classList.remove('hidden-view');
+            document.getElementById('dashboardContent')?.classList.remove('hidden-view');
             document.getElementById('displayClass').textContent = data.classNum || '';
             document.getElementById('displayName').textContent = data.name || '';
 
@@ -720,18 +754,21 @@
             if (isScorePublished) {
                 const maxVal = 100;
                 const percentage = Math.min(100, Math.max(0, ((data.score || 0) / maxVal) * 100));
-                progressBar.style.width = percentage + '%';
+                if (progressBar) progressBar.style.width = percentage + '%';
 
-                if (percentage >= 100) progressText.textContent = '축하합니다! 최고 목표 달성!';
-                else if (percentage >= 70) progressText.textContent = '참 잘하고 있어요! 계속 파이팅!';
-                else progressText.textContent = '조금씩 꾸준히 모아봐요!';
+                if (progressText) {
+                    if (percentage >= 100) progressText.textContent = '축하합니다! 최고 목표 달성!';
+                    else if (percentage >= 70) progressText.textContent = '참 잘하고 있어요! 계속 파이팅!';
+                    else progressText.textContent = '조금씩 꾸준히 모아봐요!';
+                }
             } else {
-                progressBar.style.width = '0%';
-                progressText.textContent = '점수 공개 대기 중입니다.';
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.textContent = '점수 공개 대기 중입니다.';
             }
 
             // Render Records Table
             const tbody = document.getElementById('studentRecordsTable');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (!data.records || data.records.length === 0) {
@@ -769,6 +806,7 @@
         // Render Stamp Slot Icons
         function renderStampBoard(boardId, count, emoji) {
             const board = document.getElementById(boardId);
+            if (!board) return;
             board.innerHTML = '';
 
             const totalSlots = Math.max(10, Math.ceil((count + 1) / 10) * 10);
@@ -789,6 +827,7 @@
         // Teacher: Toggle score publish status
         async function toggleScorePublish() {
             const toggleBtn = document.getElementById('publishToggle');
+            if (!toggleBtn) return;
             isScorePublished = toggleBtn.checked;
 
             if (gasWebAppUrl) {
@@ -797,7 +836,7 @@
             
             showToast(isScorePublished ? '학생들에게 점수가 공개됩니다.' : '학생들의 점수가 비공개 처리되었습니다.');
             
-            const currentId = document.getElementById('searchId').value;
+            const currentId = document.getElementById('searchId')?.value;
             if (currentId && mockStudentData[currentId]) {
                 renderStudentDashboard(mockStudentData[currentId]);
             }
@@ -806,6 +845,7 @@
         // Teacher: Update Overview Table
         async function updateOverviewTable() {
             const tbody = document.getElementById('overviewTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (gasWebAppUrl) {
@@ -848,8 +888,13 @@
             const name = document.getElementById('recordName').value.trim();
             const id = document.getElementById('recordId').value.trim() || '10100';
             const classNum = document.getElementById('recordClass').value.trim() || '1반';
-            const category = document.querySelector('input[name="category"]:checked').value;
-            const scoreVal = document.getElementById('recordScore').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value;
+            const scoreVal = document.getElementById('recordScore')?.value;
+
+            if (!category) {
+                showToast('평가 항목을 선택해 주세요.', true);
+                return;
+            }
 
             let valueText = '도장 획득';
             if (category === 'participationScore' || category === 'worksheetScore' || category === 'score') {
@@ -890,7 +935,7 @@
             document.getElementById('recordName').value = '';
             document.getElementById('recordId').value = '';
             document.getElementById('recordClass').value = '';
-            document.getElementById('recordScore').value = '';
+            if (document.getElementById('recordScore')) document.getElementById('recordScore').value = '';
         }
 
         // Teacher: Handle Notice Submit
