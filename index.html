@@ -1,375 +1,247 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 도장판 시스템</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 폰트 설정 (Pretendard) -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
-    <style>
-        body { font-family: 'Pretendard', sans-serif; }
-        .hidden-view { display: none !important; }
+<script>
+        // --- State & Initialization ---
+        let isTeacherMode = false;
+        let currentTab = 'record';
         
-        /* 도장 모양 CSS */
-        .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
-        @media (min-width: 640px) { .stamp-grid { grid-template-columns: repeat(10, 1fr); } }
+        // 선생님이 주신 기본 GAS URL을 초기값으로 세팅
+        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwarE2Dxr3_0hOuYLnNh-pX3YwYGcw9FqlgODefDoVnxwp-Jv4G15NiozlP1Wh-KQp2/exec";
+        let teacherPassword = localStorage.getItem('teacherPassword') || '1234';
+        let gasUrl = localStorage.getItem('gasUrl') || DEFAULT_GAS_URL;
         
-        .stamp-slot {
-            aspect-ratio: 1 / 1;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            border: 2px dashed #d1d5db;
-            background-color: #f9fafb;
-            transition: all 0.3s;
-        }
-        .stamp-filled {
-            border-style: solid;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-    </style>
-</head>
-<body class="bg-slate-50 min-h-screen pb-12">
-
-    <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span>🏫</span> 스마트 학습 도장판
-            </h1>
-            <button id="modeToggleBtn" class="text-sm font-medium px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
-                <span id="modeToggleText">교사용으로 전환</span>
-            </button>
-        </div>
-    </header>
-
-    <main class="max-w-5xl mx-auto px-4 mt-6">
+        // --- DOM Elements ---
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        const modeToggleText = document.getElementById('modeToggleText');
+        const teacherAuthModal = document.getElementById('teacherAuthModal');
+        const teacherAuthForm = document.getElementById('teacherAuthForm');
         
-        <!-- ========================================== -->
-        <!-- 1. 학생용 뷰 (기본 화면) -->
-        <!-- ========================================== -->
-        <div id="studentView" class="space-y-6">
-            <!-- 검색 영역 -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">내 도장 확인하기</h2>
-                <div class="flex gap-2 max-w-md">
-                    <div class="flex-1">
-                        <label for="searchStudentName" class="sr-only">이름 입력</label>
-                        <input type="text" id="searchStudentName" placeholder="이름을 입력하세요 (예: 홍길동)" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
-                    </div>
-                    <button class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
-                        조회
-                    </button>
-                </div>
-            </div>
-
-            <!-- 도장판 결과 영역 -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-8">
-                <!-- 참 잘했어요 -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-gray-800 flex items-center gap-2"><span class="text-xl">💮</span> 참 잘했어요 (5/10)</h3>
-                    </div>
-                    <div id="goodStampBoard" class="stamp-grid">
-                        <!-- JS로 채워질 영역 (하단 스크립트 참고) -->
-                    </div>
-                </div>
-
-                <!-- 좀 더 분발하세요 -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-gray-800 flex items-center gap-2"><span class="text-xl">😢</span> 좀 더 분발하세요 (2/10)</h3>
-                    </div>
-                    <div id="effortStampBoard" class="stamp-grid"></div>
-                </div>
-
-                <!-- 학습지 완료 -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-gray-800 flex items-center gap-2"><span class="text-xl">📝</span> 학습지 완료 (10/10)</h3>
-                    </div>
-                    <div id="worksheetStampBoard" class="stamp-grid"></div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- ========================================== -->
-        <!-- 2. 교사용 뷰 -->
-        <!-- ========================================== -->
+        const studentView = document.getElementById('studentView');
+        const teacherTabs = document.getElementById('teacherTabs');
+        const recordTab = document.getElementById('recordTab');
+        const noticeTab = document.getElementById('noticeTab');
+        const manageTab = document.getElementById('manageTab');
         
-        <!-- 교사용 탭 메뉴 -->
-        <div id="teacherTabs" class="hidden-view flex space-x-1 bg-gray-200/50 p-1 rounded-xl mb-6 overflow-x-auto">
-            <button class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm transition whitespace-nowrap" data-target="recordTab">
-                ✍️ 학생 기록
-            </button>
-            <button class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition whitespace-nowrap" data-target="noticeTab">
-                📢 알림 발송
-            </button>
-            <button class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition whitespace-nowrap" data-target="manageTab">
-                📊 전체 관리
-            </button>
-        </div>
-
-        <!-- 2-1. 학생 기록 탭 -->
-        <div id="recordTab" class="hidden-view">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-6">새로운 기록 추가</h2>
-                
-                <form class="space-y-6" onsubmit="event.preventDefault();">
-                    <!-- 학생 정보 입력 (검색/드롭다운 복합 제안) -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="inputGrade" class="block text-sm font-medium text-gray-700 mb-1">학년/반</label>
-                            <select id="inputGrade" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <option value="">선택</option>
-                                <option value="1-1">1학년 1반</option>
-                                <option value="1-2">1학년 2반</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="inputNumber" class="block text-sm font-medium text-gray-700 mb-1">학번(번호)</label>
-                            <input type="number" id="inputNumber" placeholder="예: 15" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <div>
-                            <label for="inputName" class="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                            <input type="text" id="inputName" placeholder="이름 입력" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                    </div>
-
-                    <!-- 평가 항목 Radio 버튼 (호환성 높은 peer 방식) -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">평가 항목 (도장 종류)</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <label class="relative border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 transition overflow-hidden">
-                                <input type="radio" name="category" value="good" class="sr-only peer" required>
-                                <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-500 peer-checked:bg-indigo-50 rounded-lg pointer-events-none"></div>
-                                <span class="text-2xl relative z-10">💮</span>
-                                <span class="text-sm font-medium relative z-10">참 잘했어요 (+1)</span>
-                            </label>
-                            <label class="relative border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 transition overflow-hidden">
-                                <input type="radio" name="category" value="effort" class="sr-only peer">
-                                <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-500 peer-checked:bg-indigo-50 rounded-lg pointer-events-none"></div>
-                                <span class="text-2xl relative z-10">😢</span>
-                                <span class="text-sm font-medium text-center relative z-10">분발하세요 (+1)</span>
-                            </label>
-                            <label class="relative border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 transition overflow-hidden">
-                                <input type="radio" name="category" value="worksheet" class="sr-only peer">
-                                <div class="absolute inset-0 border-2 border-transparent peer-checked:border-green-500 peer-checked:bg-green-50 rounded-lg pointer-events-none"></div>
-                                <span class="text-2xl relative z-10">📝</span>
-                                <span class="text-sm font-medium relative z-10">학습지 완료 (+1)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 메모 -->
-                    <div>
-                        <label for="inputMemo" class="block text-sm font-medium text-gray-700 mb-1">메모 (선택)</label>
-                        <input type="text" id="inputMemo" placeholder="특이사항이 있다면 적어주세요." class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-
-                    <button type="submit" class="w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-lg transition">
-                        기록 저장하기
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- 2-2. 알림 발송 탭 -->
-        <div id="noticeTab" class="hidden-view">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col items-center justify-center py-12 text-gray-500">
-                <span class="text-4xl mb-3">📢</span>
-                <p>알림 발송 기능은 준비 중입니다.</p>
-            </div>
-        </div>
-
-        <!-- 2-3. 전체 관리 탭 (테이블 모바일 최적화 및 마감 처리 완료) -->
-        <div id="manageTab" class="hidden-view">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-gray-800">전체 학생 현황</h2>
-                    <button class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">새로고침</button>
-                </div>
-                
-                <!-- 모바일에서 가로 스크롤이 가능하도록 설정 -->
-                <div class="overflow-x-auto border rounded-lg">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-gray-50 text-gray-600 border-b">
-                            <tr>
-                                <th class="p-3 font-medium">반</th>
-                                <th class="p-3 font-medium">번호</th>
-                                <th class="p-3 font-medium">이름</th>
-                                <th class="p-3 font-medium">참 잘했어요 💮</th>
-                                <th class="p-3 font-medium">분발하세요 😢</th>
-                                <th class="p-3 font-medium">학습지 📝</th>
-                                <th class="p-3 font-medium">최근 기록일</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y" id="overviewTableBody">
-                            <!-- 예시 데이터 -->
-                            <tr class="hover:bg-gray-50">
-                                <td class="p-3">1-1</td>
-                                <td class="p-3">15</td>
-                                <td class="p-3 font-bold">홍길동</td>
-                                <td class="p-3 text-indigo-600 font-bold">5</td>
-                                <td class="p-3 text-gray-500">2</td>
-                                <td class="p-3 text-green-600 font-bold">10</td>
-                                <td class="p-3 text-gray-400">2023.10.25</td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="p-3">1-1</td>
-                                <td class="p-3">16</td>
-                                <td class="p-3 font-bold">김철수</td>
-                                <td class="p-3 text-indigo-600 font-bold">8</td>
-                                <td class="p-3 text-gray-500">0</td>
-                                <td class="p-3 text-green-600 font-bold">5</td>
-                                <td class="p-3 text-gray-400">2023.10.24</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- ========================================== -->
-    <!-- 3. 교사 인증 모달 (보안) -->
-    <!-- ========================================== -->
-    <div id="teacherAuthModal" class="hidden-view fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
-            <div class="p-5 border-b flex justify-between items-center bg-gray-50">
-                <h3 class="font-bold text-gray-800">교사 모드 접속</h3>
-                <button id="closeAuthModalBtn" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
-            </div>
-            <div class="p-5 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">관리자 비밀번호</label>
-                    <input type="password" id="adminPassword" placeholder="비밀번호를 입력하세요" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <button id="authSubmitBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
-                    확인
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 4. 자바스크립트 로직 -->
-    <!-- ========================================== -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- UI Helper Functions ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-indigo-600' : 'bg-red-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
             
-            // --- 1. 도장판 렌더링 함수 ---
-            function renderStamps(containerId, count, totalSlots, stampEmoji, borderColor, textColor) {
-                const container = document.getElementById(containerId);
-                container.innerHTML = ''; 
-                
-                for (let i = 0; i < totalSlots; i++) {
-                    const slot = document.createElement('div');
-                    if (i < count) {
-                        slot.className = `stamp-slot stamp-filled border-${borderColor} text-${textColor}`;
-                        slot.innerText = stampEmoji;
-                    } else {
-                        slot.className = 'stamp-slot stamp-empty';
-                        slot.innerText = '';
-                    }
-                    container.appendChild(slot);
-                }
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 toast-enter pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span class="text-sm font-medium">${message}</span>`;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Mode Switching ---
+        modeToggleBtn.addEventListener('click', () => {
+            if (!isTeacherMode) {
+                teacherAuthModal.classList.remove('hidden-view');
+            } else {
+                isTeacherMode = false;
+                modeToggleBtn.innerHTML = `<i class="fa-solid fa-user-gear"></i> <span id="modeToggleText">교사용으로 전환</span>`;
+                studentView.classList.remove('hidden-view');
+                teacherTabs.classList.add('hidden-view');
+                recordTab.classList.add('hidden-view');
+                noticeTab.classList.add('hidden-view');
+                manageTab.classList.add('hidden-view');
+                showToast('학생 모드로 전환되었습니다.');
             }
+        });
 
-            // 학생 뷰 화면 로딩 시 테스트 도장 그리기
-            renderStamps('goodStampBoard', 5, 10, '💮', 'indigo-500', 'indigo-500');
-            renderStamps('effortStampBoard', 2, 10, '😢', 'gray-400', 'gray-600');
-            renderStamps('worksheetStampBoard', 10, 10, '📝', 'green-500', 'green-500');
+        document.getElementById('closeAuthModalBtn').addEventListener('click', () => teacherAuthModal.classList.add('hidden-view'));
+        document.getElementById('cancelAuthBtn').addEventListener('click', () => teacherAuthModal.classList.add('hidden-view'));
 
-            // --- 2. 교사 모드 토글 로직 ---
-            const modeToggleBtn = document.getElementById('modeToggleBtn');
-            const teacherAuthModal = document.getElementById('teacherAuthModal');
-            const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
-            const authSubmitBtn = document.getElementById('authSubmitBtn');
-            
-            const studentView = document.getElementById('studentView');
-            const teacherTabs = document.getElementById('teacherTabs');
-            
-            // 탭 컨텐츠 배열
-            const allTabs = ['recordTab', 'noticeTab', 'manageTab'];
-            
-            let isTeacherMode = false;
-
-            // 상단 버튼 클릭 시
-            modeToggleBtn.addEventListener('click', () => {
-                if (!isTeacherMode) {
-                    teacherAuthModal.classList.remove('hidden-view'); // 비번 모달 열기
-                } else {
-                    // 학생 모드로 돌아가기
-                    isTeacherMode = false;
-                    document.getElementById('modeToggleText').innerText = '교사용으로 전환';
-                    
-                    // 교사 UI 숨기고 학생 UI 켜기
-                    teacherTabs.classList.add('hidden-view');
-                    allTabs.forEach(tab => document.getElementById(tab).classList.add('hidden-view'));
-                    studentView.classList.remove('hidden-view');
-                }
-            });
-
-            // 모달 닫기 버튼
-            closeAuthModalBtn.addEventListener('click', () => {
+        teacherAuthForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('teacherPasswordInput').value;
+            if (input === teacherPassword) {
+                isTeacherMode = true;
                 teacherAuthModal.classList.add('hidden-view');
-            });
+                document.getElementById('teacherPasswordInput').value = '';
+                
+                modeToggleBtn.innerHTML = `<i class="fa-solid fa-user-graduate"></i> <span id="modeToggleText">학생용으로 전환</span>`;
+                studentView.classList.add('hidden-view');
+                teacherTabs.classList.remove('hidden-view');
+                switchTab('record');
+                showToast('교사 모드로 인증되었습니다.');
+                
+                document.getElementById('gasUrlInput').value = gasUrl;
+            } else {
+                showToast('비밀번호가 일치하지 않습니다.', 'error');
+            }
+        });
 
-            // 비밀번호 확인 버튼 (실제 환경에서는 서버 검증 필수)
-            authSubmitBtn.addEventListener('click', () => {
-                const pwd = document.getElementById('adminPassword').value;
-                if(pwd === "1234") { // 테스트용 임시 비밀번호
-                    alert("교사 모드로 접속되었습니다.");
-                    teacherAuthModal.classList.add('hidden-view');
-                    document.getElementById('adminPassword').value = '';
-                    
-                    isTeacherMode = true;
-                    document.getElementById('modeToggleText').innerText = '학생용으로 돌아가기';
-                    
-                    // 학생 UI 숨기고 교사 UI 켜기
-                    studentView.classList.add('hidden-view');
-                    teacherTabs.classList.remove('hidden-view');
-                    document.getElementById('recordTab').classList.remove('hidden-view'); // 기본 탭 열기
+        // --- Teacher Tabs Logic ---
+        const tabs = {
+            record: { btn: document.getElementById('tab-record'), view: recordTab },
+            notice: { btn: document.getElementById('tab-notice'), view: noticeTab },
+            manage: { btn: document.getElementById('tab-manage'), view: manageTab }
+        };
+
+        function switchTab(tabId) {
+            Object.keys(tabs).forEach(id => {
+                tabs[id].btn.className = 'pb-3 px-1 cursor-pointer ' + (id === tabId ? 'tab-active' : 'tab-inactive');
+                if (id === tabId) {
+                    tabs[id].view.classList.remove('hidden-view');
                 } else {
-                    alert("비밀번호가 일치하지 않습니다.");
+                    tabs[id].view.classList.add('hidden-view');
                 }
             });
+            currentTab = tabId;
+        }
 
-            // --- 3. 교사용 탭 전환 로직 ---
-            const tabButtons = document.querySelectorAll('.tab-btn');
+        document.getElementById('tab-record').addEventListener('click', () => switchTab('record'));
+        document.getElementById('tab-notice').addEventListener('click', () => switchTab('notice'));
+        document.getElementById('tab-manage').addEventListener('click', () => switchTab('manage'));
+
+        // --- Student Search (GET 요청) ---
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const searchName = document.getElementById('searchName').value.trim();
+            const searchPassword = document.getElementById('searchPassword').value.trim();
             
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    // 모든 버튼 스타일 초기화 (회색 처리)
-                    tabButtons.forEach(b => {
-                        b.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm', 'font-bold');
-                        b.classList.add('text-gray-600', 'font-medium');
-                    });
-                    
-                    // 클릭된 버튼 스타일 활성화
-                    const clickedBtn = e.currentTarget;
-                    clickedBtn.classList.remove('text-gray-600', 'font-medium');
-                    clickedBtn.classList.add('bg-white', 'text-indigo-600', 'shadow-sm', 'font-bold');
-                    
-                    // 모든 탭 컨텐츠 숨기기
-                    allTabs.forEach(tab => document.getElementById(tab).classList.add('hidden-view'));
-                    
-                    // 클릭된 탭 컨텐츠 보이기
-                    const targetId = clickedBtn.getAttribute('data-target');
-                    document.getElementById(targetId).classList.remove('hidden-view');
-                });
-            });
+            showToast('데이터를 불러오는 중입니다...', 'success');
+            
+            try {
+                // 구글 시트에서 학생 데이터 조회 (이름, 비밀번호 매칭)
+                const response = await fetch(`${gasUrl}?type=search&name=${encodeURIComponent(searchName)}&password=${encodeURIComponent(searchPassword)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    showToast('학생 정보를 찾을 수 없거나 비밀번호가 틀렸습니다.', 'error');
+                    return;
+                }
 
+                showToast(`${searchName} 학생의 데이터를 불러왔습니다.`);
+                document.getElementById('dashboardContent').classList.remove('hidden-view');
+                
+                document.getElementById('displayName').innerText = data.name || searchName;
+                document.getElementById('displayClass').innerText = data.class || '';
+                
+                // 받아온 데이터로 UI 업데이트 (키값은 구글 앱스 스크립트 설정에 따라 변경 필요)
+                updateStamps('goodStampBoard', 10, data.goodStamps || 0, '💮');
+                updateStamps('effortStampBoard', 5, data.effortStamps || 0, '😢');
+                updateStamps('worksheetStampBoard', 10, data.worksheetStamps || 0, '📝');
+                
+                document.getElementById('participationScoreCount').innerText = data.participationScore || 0;
+                document.getElementById('worksheetScoreCount').innerText = data.worksheetScore || 0;
+                document.getElementById('totalScore').innerText = data.totalScore || 0;
+                
+                setTimeout(() => {
+                    const total = data.totalScore || 0;
+                    document.getElementById('scoreProgressBar').style.width = `${total}%`;
+                }, 100);
+
+            } catch (error) {
+                console.error(error);
+                showToast('서버 통신 중 오류가 발생했습니다.', 'error');
+            }
+        });
+
+        function updateStamps(containerId, maxSlots, currentCount, icon) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            document.getElementById(containerId.replace('Board', 'Count')).innerText = currentCount;
+            
+            for (let i = 0; i < maxSlots; i++) {
+                const stamp = document.createElement('div');
+                if (i < currentCount) {
+                    stamp.className = 'stamp-slot stamp-filled shadow-sm';
+                    stamp.innerHTML = icon;
+                } else {
+                    stamp.className = 'stamp-slot stamp-empty';
+                }
+                container.appendChild(stamp);
+            }
+        }
+
+        // --- 교사 기록 추가 (POST 요청) ---
+        document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.innerText = "저장 중...";
+            submitBtn.disabled = true;
+
+            const postData = {
+                type: 'record',
+                date: document.getElementById('recordDate').value,
+                session: document.getElementById('recordSession').value,
+                name: document.getElementById('recordName').value,
+                category: document.querySelector('input[name="category"]:checked').value,
+                score: document.getElementById('recordScore').value || 0
+            };
+
+            try {
+                const response = await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(postData)
+                });
+                const result = await response.json();
+                
+                if(result.success) {
+                    showToast('기록이 성공적으로 저장되었습니다!');
+                    e.target.reset();
+                    scoreInputContainer.classList.add('hidden-view');
+                } else {
+                    showToast('저장에 실패했습니다.', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('통신 오류가 발생했습니다.', 'error');
+            } finally {
+                submitBtn.innerText = "기록 저장하기";
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- Settings & Auth Changes ---
+        document.getElementById('saveGasBtn').addEventListener('click', () => {
+            const url = document.getElementById('gasUrlInput').value;
+            localStorage.setItem('gasUrl', url);
+            gasUrl = url;
+            showToast('GAS URL이 저장되었습니다.');
+        });
+
+        const changePassModal = document.getElementById('changePassModal');
+        document.getElementById('openChangePassBtn').addEventListener('click', () => changePassModal.classList.remove('hidden-view'));
+        document.getElementById('closeChangePassModalBtn').addEventListener('click', () => changePassModal.classList.add('hidden-view'));
+        document.getElementById('cancelChangePassBtn').addEventListener('click', () => changePassModal.classList.add('hidden-view'));
+
+        document.getElementById('changePassForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const currentPass = document.getElementById('currentPassInput').value;
+            const newPass = document.getElementById('newPassInput').value;
+            
+            if (currentPass !== teacherPassword) {
+                showToast('현재 비밀번호가 틀렸습니다.', 'error');
+                return;
+            }
+            
+            teacherPassword = newPass;
+            localStorage.setItem('teacherPassword', newPass);
+            showToast('비밀번호가 성공적으로 변경되었습니다.');
+            changePassModal.classList.add('hidden-view');
+            e.target.reset();
+        });
+
+        const categoryRadios = document.querySelectorAll('input[name="category"]');
+        const scoreInputContainer = document.getElementById('scoreInputContainer');
+        const recordScore = document.getElementById('recordScore');
+
+        categoryRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (['participationScore', 'worksheetScore', 'score'].includes(e.target.value)) {
+                    scoreInputContainer.classList.remove('hidden-view');
+                    recordScore.required = true;
+                } else {
+                    scoreInputContainer.classList.add('hidden-view');
+                    recordScore.required = false;
+                }
+            });
         });
     </script>
-</body>
-</html>
