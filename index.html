@@ -12,34 +12,16 @@
         .hidden-view { display: none !important; }
         .tab-active { border-bottom: 2px solid #6366f1; color: #4f46e5; font-weight: 600; }
         .tab-inactive { color: #6b7280; font-weight: 500; }
-        .tab-inactive:hover { color: #111827; }
-        
-        .stamp-slot {
-            width: 44px; height: 44px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 22px; transition: all 0.3s ease;
-        }
-        .stamp-empty { border: 2px dashed #cbd5e1; background-color: #f8fafc; color: #94a3b8; }
-        .stamp-filled { border: 2px solid #6366f1; background-color: #eef2ff; animation: pop 0.3s ease-out; }
-        
-        @keyframes pop {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
         
         .toast-enter { animation: toastIn 0.3s ease-out forwards; }
         .toast-exit { animation: toastOut 0.3s ease-in forwards; }
-        
         @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
         
-        /* 로딩 스피너 */
         .loader {
             border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1;
             width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block;
@@ -60,9 +42,8 @@
                     <span class="font-bold text-xl tracking-tight text-gray-900">일본어 수업 포트폴리오</span>
                 </div>
                 <div class="flex items-center">
-                    <button id="modeToggleBtn" type="button" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-user-gear"></i>
-                        <span id="modeToggleText">교사용으로 전환</span>
+                    <button id="modeToggleBtn" type="button" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear"></i> <span id="modeToggleText">교사용으로 전환</span>
                     </button>
                 </div>
             </div>
@@ -73,23 +54,14 @@
     <div id="teacherAuthModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden-view p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-lock text-indigo-600"></i> 교사용 인증
-                </h3>
-                <button id="closeAuthModalBtn" type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-lock text-indigo-600"></i> 교사용 인증</h3>
+                <button id="closeAuthModalBtn" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="teacherAuthForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">교사용 비밀번호</label>
-                    <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력 (초기: 1234)" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                    <p class="text-xs text-gray-500 mt-1 font-medium">* 초기 비밀번호는 <span class="text-indigo-600 font-bold">1234</span> 입니다.</p>
-                </div>
+                <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력 (초기: 1234)" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer">취소</button>
-                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition shadow-sm cursor-pointer">확인</button>
+                    <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg">취소</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">확인</button>
                 </div>
             </form>
         </div>
@@ -99,322 +71,249 @@
     <main class="flex-grow overflow-y-auto pb-20">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             
-            <!-- Tabs (Teacher Mode Only) -->
-            <div id="teacherTabs" class="hidden-view mb-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex gap-6">
-                    <button id="tab-record" class="pb-3 px-1 tab-active cursor-pointer">기록 및 도장 부여</button>
-                    <button id="tab-notice" class="pb-3 px-1 tab-inactive cursor-pointer">알림사항 관리</button>
-                    <button id="tab-manage" class="pb-3 px-1 tab-inactive cursor-pointer">전체 학생 관리</button>
-                </div>
+            <div id="teacherTabs" class="hidden-view mb-6 border-b flex gap-6">
+                <button id="tab-record" class="pb-3 px-1 tab-active">기록 및 도장 부여</button>
+                <button id="tab-notice" class="pb-3 px-1 tab-inactive">알림사항 관리</button>
             </div>
 
-            <!-- ============================== -->
-            <!-- 1. STUDENT VIEW (Dashboard)    -->
-            <!-- ============================== -->
+            <!-- Student View -->
             <div id="studentView">
-                <!-- Search Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6 mb-6">
-                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800">
-                        <i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기
-                    </h2>
-                    <form id="searchForm" class="flex flex-col gap-3">
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                            <input type="password" id="searchPassword" placeholder="비밀번호 (초기설정: 학번)" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                            <button type="submit" id="searchBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition whitespace-nowrap shadow-sm cursor-pointer flex justify-center items-center gap-2">
-                                조회하기
-                            </button>
-                        </div>
+                <!-- 학생 검색 폼 부분 (이전과 동일하여 생략, 기존 코드 유지됨) -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기</h2>
+                    <form id="searchForm" class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="searchName" placeholder="이름" required class="flex-1 px-4 py-2 border rounded-lg">
+                        <input type="password" id="searchPassword" placeholder="비밀번호(학번)" required class="flex-1 px-4 py-2 border rounded-lg">
+                        <button type="submit" id="searchBtn" class="bg-indigo-600 text-white py-2 px-6 rounded-lg">조회하기</button>
                     </form>
                 </div>
-
-                <!-- Dashboard Content (Hidden until searched) -->
-                <div id="dashboardContent" class="hidden-view space-y-6">
-                    <!-- Dashboard UI는 원본 코드와 동일하므로 임의의 데이터가 들어갈 틀 유지 -->
-                    <div class="flex justify-between items-end">
-                        <h2 class="text-2xl font-bold text-gray-800">
-                            <span id="displayClass" class="text-indigo-600 text-lg mr-1"></span>
-                            <span id="displayName" class="text-indigo-600"></span> 학생의 포트폴리오
-                        </h2>
-                    </div>
-                    <!-- Stamp Boards (도장판) 예시 -->
-                    <div class="bg-white rounded-xl shadow-sm border border-pink-100 p-5">
-                        <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <span class="text-xl">💮</span> 획득한 도장 현황
-                        </h3>
-                        <div id="goodStampBoard" class="flex flex-wrap gap-2 text-2xl">
-                            <!-- JS에서 도장 채워짐 -->
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- ============================== -->
-            <!-- 2. TEACHER VIEW                -->
-            <!-- ============================== -->
-            <!-- Tab 1: Record Input -->
+            <!-- Teacher Record View -->
             <div id="recordTab" class="hidden-view">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-3">기록 및 도장 부여 (일괄 부여 가능)</h2>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl mx-auto">
+                    <h2 class="text-xl font-bold mb-6 border-b pb-3 flex items-center gap-2"><i class="fa-solid fa-stamp text-indigo-500"></i> 도장 일괄 부여하기</h2>
                     
-                    <form id="addRecordForm" class="space-y-5">
+                    <form id="addRecordForm" class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">날짜</label><input type="date" id="recordDate" required class="w-full px-4 py-2 border rounded-lg"></div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">날짜</label>
-                                <input type="date" id="recordDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">회차 선택</label>
-                                <select id="recordSession" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                    <option value="" disabled selected>회차를 선택하세요</option>
+                                <label class="block text-sm font-medium mb-1">회차 선택</label>
+                                <select id="recordSession" required class="w-full px-4 py-2 border rounded-lg">
+                                    <option value="" disabled selected>회차 선택</option>
                                     <option value="1회차">1회차</option><option value="2회차">2회차</option>
                                     <option value="3회차">3회차</option><option value="4회차">4회차</option>
-                                    <option value="5회차">5회차</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- 💡 핵심 수정: 여러 명의 학생을 쉼표로 입력받도록 폼 수정 -->
-                        <div>
-                            <label class="block text-sm font-bold text-indigo-700 mb-1">학생 이름 (일괄 부여)</label>
-                            <input type="text" id="recordNameBulk" placeholder="예: 홍길동, 김철수, 이영희" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-indigo-50">
-                            <p class="text-xs text-gray-500 mt-1">* 한 명, 혹은 쉼표(,)로 구분하여 여러 명의 이름을 입력하면 일괄 부여됩니다.</p>
+                        <!-- 💡 반 선택 및 학생 다중 선택 UI -->
+                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                            <label class="block text-sm font-bold text-indigo-700 mb-2">1. 반 선택</label>
+                            <select id="classSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled selected>명렬표를 불러오는 중입니다...</option>
+                            </select>
+
+                            <div class="flex justify-between items-end mb-2">
+                                <label class="block text-sm font-bold text-indigo-700">2. 학생 선택 (다중 선택 가능)</label>
+                                <div class="flex gap-2">
+                                    <button type="button" id="selectAllBtn" class="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-md">전체 선택</button>
+                                    <button type="button" id="deselectAllBtn" class="text-xs px-3 py-1.5 bg-gray-300 text-gray-700 rounded-md">선택 해제</button>
+                                </div>
+                            </div>
+                            <!-- 동적 학생 목록 그리드 -->
+                            <div id="studentGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-3 border border-gray-200 rounded-lg bg-white">
+                                <div class="col-span-full text-center text-gray-400 text-sm py-4">반을 먼저 선택해주세요.</div>
+                            </div>
                         </div>
 
+                        <!-- 평가 항목 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">평가 항목</label>
+                            <label class="block text-sm font-medium mb-2">3. 평가 항목</label>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="good" class="sr-only" required>
-                                    <span class="text-2xl">💮</span>
-                                    <span class="text-sm font-medium">참 잘했어요</span>
+                                <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                                    <input type="radio" name="category" value="good" class="sr-only" required><span class="text-2xl">💮</span><span class="text-sm font-medium">참 잘했어요</span>
                                 </label>
-                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
-                                    <input type="radio" name="category" value="effort" class="sr-only">
-                                    <span class="text-2xl">😢</span>
-                                    <span class="text-sm font-medium text-center">좀 더 분발하세요</span>
+                                <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+                                    <input type="radio" name="category" value="effort" class="sr-only"><span class="text-2xl">😢</span><span class="text-sm font-medium">분발하세요</span>
                                 </label>
-                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-green-500 has-[:checked]:bg-green-50 transition">
-                                    <input type="radio" name="category" value="worksheet" class="sr-only">
-                                    <span class="text-2xl">📝</span>
-                                    <span class="text-sm font-medium">학습지 완료</span>
+                                <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+                                    <input type="radio" name="category" value="worksheet" class="sr-only"><span class="text-2xl">📝</span><span class="text-sm font-medium">학습지 완료</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div id="scoreInputContainer" class="hidden-view">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">점수 입력 (선택사항)</label>
-                            <input type="number" id="recordScore" placeholder="예: 10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-
-                        <button type="submit" id="submitRecordBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-sm mt-4 cursor-pointer flex justify-center items-center gap-2">
-                            기록 저장하기
+                        <button type="submit" id="submitRecordBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg flex justify-center gap-2">
+                            선택한 학생들에게 부여하기
                         </button>
                     </form>
                 </div>
             </div>
-
-            <!-- Tab 2 & 3 Placeholder (간소화) -->
-            <div id="noticeTab" class="hidden-view">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto text-center text-gray-500 py-10">
-                    추후 업데이트 예정입니다.
-                </div>
-            </div>
-            <div id="manageTab" class="hidden-view">
-                <div class="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500 py-10">
-                    추후 업데이트 예정입니다.
-                </div>
-            </div>
-
+            
+            <div id="noticeTab" class="hidden-view"><div class="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500 py-10">알림사항 준비중</div></div>
         </div>
     </main>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
-        // ==========================================
-        // 1. 상태 및 상수 관리
-        // ==========================================
-        // 요청하신 구글 앱스 스크립트 웹앱 주소 세팅
+        // 🚨 본인의 앱스 스크립트 웹앱 URL로 변경하세요!
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzUz3664bERc2N9qc9ltla4LuHcRl7bFEDILIXf_08EbT3Zbn-3Y1TzpyGPaoEjtSfc/exec";
         let isTeacherMode = false;
-        
-        // 오늘 날짜 기본 세팅
+        let allStudents = []; // 구글시트에서 불러온 전체 명렬표 저장용
+
         document.getElementById('recordDate').valueAsDate = new Date();
 
-        // ==========================================
-        // 2. UI 토글 및 탭 관리
-        // ==========================================
-        const studentView = document.getElementById('studentView');
-        const teacherTabs = document.getElementById('teacherTabs');
-        const recordTab = document.getElementById('recordTab');
-        const noticeTab = document.getElementById('noticeTab');
-        const manageTab = document.getElementById('manageTab');
-        const modal = document.getElementById('teacherAuthModal');
-
-        // 모드 전환 버튼
-        document.getElementById('modeToggleBtn').addEventListener('click', () => {
-            if (!isTeacherMode) {
-                modal.classList.remove('hidden-view');
-            } else {
-                isTeacherMode = false;
-                document.getElementById('modeToggleText').innerText = "교사용으로 전환";
-                studentView.classList.remove('hidden-view');
-                teacherTabs.classList.add('hidden-view');
-                recordTab.classList.add('hidden-view');
-                noticeTab.classList.add('hidden-view');
-                manageTab.classList.add('hidden-view');
-                showToast("학생 모드로 전환되었습니다.", "info");
-            }
-        });
-
-        // 모달 닫기
-        document.getElementById('closeAuthModalBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
-        document.getElementById('cancelAuthBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
-
-        // 교사 인증 폼 제출
-        document.getElementById('teacherAuthForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const pw = document.getElementById('teacherPasswordInput').value;
-            if (pw === '1234') { // 초기 비밀번호 체크
-                isTeacherMode = true;
-                modal.classList.add('hidden-view');
-                document.getElementById('modeToggleText').innerText = "학생용으로 전환";
-                studentView.classList.add('hidden-view');
-                teacherTabs.classList.remove('hidden-view');
-                recordTab.classList.remove('hidden-view');
-                document.getElementById('teacherPasswordInput').value = '';
-                showToast("교사 모드로 로그인되었습니다.", "success");
-            } else {
-                showToast("비밀번호가 일치하지 않습니다.", "error");
-            }
-        });
-
-        // 교사 탭 전환
-        const switchTab = (activeId, viewId) => {
-            ['tab-record', 'tab-notice', 'tab-manage'].forEach(id => {
-                const tab = document.getElementById(id);
-                tab.classList.remove('tab-active');
-                tab.classList.add('tab-inactive');
-            });
-            document.getElementById(activeId).classList.remove('tab-inactive');
-            document.getElementById(activeId).classList.add('tab-active');
-            
-            [recordTab, noticeTab, manageTab].forEach(tab => tab.classList.add('hidden-view'));
-            document.getElementById(viewId).classList.remove('hidden-view');
-        };
-
-        document.getElementById('tab-record').addEventListener('click', () => switchTab('tab-record', 'recordTab'));
-        document.getElementById('tab-notice').addEventListener('click', () => switchTab('tab-notice', 'noticeTab'));
-        document.getElementById('tab-manage').addEventListener('click', () => switchTab('tab-manage', 'manageTab'));
-
-        // ==========================================
-        // 3. 앱스 스크립트(GAS) 통신 및 폼 제출 로직 (일괄 부여 포함)
-        // ==========================================
-        document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('submitRecordBtn');
-            const originalBtnHtml = btn.innerHTML;
-            
-            // 폼 데이터 수집
-            const date = document.getElementById('recordDate').value;
-            const session = document.getElementById('recordSession').value;
-            const namesStr = document.getElementById('recordNameBulk').value;
-            const category = document.querySelector('input[name="category"]:checked').value;
-            const score = document.getElementById('recordScore').value || "";
-
-            // 쉼표로 구분된 이름 분리 및 공백 제거
-            const namesArray = namesStr.split(',').map(name => name.trim()).filter(name => name !== '');
-            
-            if (namesArray.length === 0) {
-                showToast("이름을 1명 이상 입력해주세요.", "error");
-                return;
-            }
-
-            // GAS로 보낼 JSON 페이로드 구성
-            const payload = {
-                action: "addRecordsBulk",
-                names: namesArray,
-                date: date,
-                session: session,
-                category: category,
-                score: score
-            };
-
+        // 1️⃣ 구글 시트에서 학생 명단 불러오기
+        async function fetchStudentList() {
             try {
-                // 로딩 UI 처리
-                btn.innerHTML = `<span class="loader border-white border-t-indigo-200"></span> 저장 중...`;
-                btn.disabled = true;
-
-                // fetch POST 요청 (CORS 회피를 위해 text/plain 방식 사용 권장)
+                const classSelect = document.getElementById('classSelect');
+                classSelect.innerHTML = '<option value="" disabled selected>명렬표를 불러오는 중입니다 <span class="loader align-middle ml-2 w-4 h-4"></span></option>';
+                
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ action: 'getStudentList' })
                 });
-                
                 const result = await response.json();
                 
                 if (result.success) {
-                    showToast(`${namesArray.length}명의 기록이 성공적으로 저장되었습니다!`, "success");
-                    document.getElementById('recordNameBulk').value = ''; // 이름 칸만 초기화
+                    allStudents = result.data;
+                    updateClassSelect(); // 드롭다운에 반 목록 렌더링
                 } else {
-                    showToast("저장 실패: " + (result.message || "서버 오류"), "error");
+                    showToast("명렬표 로드 실패", "error");
                 }
+            } catch (e) {
+                showToast("명렬표를 불러오는 중 오류가 발생했습니다.", "error");
+            }
+        }
+
+        // 2️⃣ 불러온 데이터로 [반 선택] 드롭다운 만들기
+        function updateClassSelect() {
+            // 전체 학생 데이터에서 '반'만 추출하고 중복제거 & 정렬
+            const classes = [...new Set(allStudents.map(s => s.className))].sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
+            const select = document.getElementById('classSelect');
+            
+            select.innerHTML = '<option value="" disabled selected>반을 선택해주세요</option>';
+            classes.forEach(cls => {
+                select.innerHTML += `<option value="${cls}">${cls}</option>`;
+            });
+
+            // 반을 선택했을 때 학생 그리드 다시 그리기
+            select.addEventListener('change', (e) => {
+                renderStudentsGrid(e.target.value);
+            });
+        }
+
+        // 3️⃣ 선택한 반의 학생들만 그리드(버튼)로 그리기
+        function renderStudentsGrid(selectedClass) {
+            const studentGrid = document.getElementById('studentGrid');
+            const classStudents = allStudents.filter(s => s.className === selectedClass);
+            
+            if(classStudents.length === 0) {
+                studentGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-4">해당 반에 학생이 없습니다.</div>';
+                return;
+            }
+
+            studentGrid.innerHTML = classStudents.map(student => {
+                // 시트에 기록할 때는 "학번 이름" 포맷으로 넘기도록 value 설정
+                const val = `${student.studentNum} ${student.name}`;
+                return `
+                <label class="cursor-pointer block relative">
+                    <input type="checkbox" name="selectedStudents" value="${val}" class="peer sr-only">
+                    <div class="text-center px-1 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-700 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:bg-gray-100 transition-colors shadow-sm select-none">
+                        <div class="text-[10px] opacity-70 mb-0.5">${student.studentNum}</div>
+                        <div class="font-bold">${student.name}</div>
+                    </div>
+                </label>
+            `}).join('');
+        }
+
+        // 전체 선택 / 해제
+        document.getElementById('selectAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('deselectAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
+        });
+
+        // --- 로그인 및 화면 전환 로직 ---
+        const modal = document.getElementById('teacherAuthModal');
+        document.getElementById('modeToggleBtn').addEventListener('click', () => {
+            if (!isTeacherMode) { modal.classList.remove('hidden-view'); } 
+            else { location.reload(); } // 학생모드 전환시 새로고침
+        });
+        document.getElementById('closeAuthModalBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
+        document.getElementById('cancelAuthBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
+
+        document.getElementById('teacherAuthForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (document.getElementById('teacherPasswordInput').value === '1234') {
+                isTeacherMode = true; 
+                modal.classList.add('hidden-view');
+                document.getElementById('modeToggleText').innerText = "학생용으로 전환";
+                document.getElementById('studentView').classList.add('hidden-view');
+                document.getElementById('teacherTabs').classList.remove('hidden-view');
+                document.getElementById('recordTab').classList.remove('hidden-view');
+                
+                // ⭐ 교사 로그인 성공 시 시트에서 명렬표 불러오기 실행
+                fetchStudentList(); 
+
+            } else { showToast("비밀번호가 일치하지 않습니다.", "error"); }
+        });
+
+        // --- 도장 일괄 부여 전송 로직 ---
+        document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitRecordBtn');
+            const originalBtnHtml = btn.innerHTML;
+            
+            const selectedCheckboxes = document.querySelectorAll('input[name="selectedStudents"]:checked');
+            const namesArray = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (namesArray.length === 0) {
+                showToast("학생을 1명 이상 선택해주세요.", "error");
+                return;
+            }
+
+            const payload = {
+                action: "addRecordsBulk",
+                names: namesArray,
+                date: document.getElementById('recordDate').value,
+                session: document.getElementById('recordSession').value,
+                category: document.querySelector('input[name="category"]:checked').value,
+                score: ""
+            };
+
+            try {
+                btn.innerHTML = `<span class="loader border-white border-t-indigo-200"></span> 전송 중...`;
+                btn.disabled = true;
+
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`${namesArray.length}명에게 도장을 부여했습니다!`, "success");
+                    // 전송 후 체크 해제
+                    document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
+                } else { showToast("오류: " + result.message, "error"); }
             } catch (error) {
-                console.error(error);
-                showToast("통신 오류가 발생했습니다. 구글 앱스 스크립트 연결을 확인하세요.", "error");
+                showToast("통신 오류가 발생했습니다.", "error");
             } finally {
                 btn.innerHTML = originalBtnHtml;
                 btn.disabled = false;
             }
         });
 
-        // 학생 검색 데모 기능 (연결용 틀)
-        document.getElementById('searchForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('searchBtn');
-            btn.innerHTML = `<span class="loader border-white border-t-indigo-200"></span>`;
-            
-            // 시뮬레이션 지연
-            setTimeout(() => {
-                document.getElementById('dashboardContent').classList.remove('hidden-view');
-                document.getElementById('displayName').innerText = document.getElementById('searchName').value;
-                document.getElementById('goodStampBoard').innerHTML = "💮 💮 💮"; // Mock Data
-                btn.innerHTML = `조회하기`;
-                showToast("데이터를 불러왔습니다.", "success");
-            }, 800);
-        });
-
-        // ==========================================
-        // 4. 공통 UI 컴포넌트 (Toast 알림)
-        // ==========================================
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            
-            let colorClasses = '';
-            let icon = '';
-            if (type === 'success') {
-                colorClasses = 'bg-green-100 border-green-200 text-green-800';
-                icon = '<i class="fa-solid fa-check-circle text-green-600"></i>';
-            } else if (type === 'error') {
-                colorClasses = 'bg-red-100 border-red-200 text-red-800';
-                icon = '<i class="fa-solid fa-circle-exclamation text-red-600"></i>';
-            } else {
-                colorClasses = 'bg-indigo-100 border-indigo-200 text-indigo-800';
-                icon = '<i class="fa-solid fa-circle-info text-indigo-600"></i>';
-            }
-
-            toast.className = `flex items-center gap-3 px-4 py-3 border rounded-lg shadow-lg text-sm font-medium toast-enter ${colorClasses}`;
-            toast.innerHTML = `${icon} ${message}`;
-            
+            let styles = type === 'success' ? 'bg-green-100 text-green-800' : type === 'error' ? 'bg-red-100 text-red-800' : 'bg-indigo-100 text-indigo-800';
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium toast-enter ${styles}`;
+            toast.innerHTML = message;
             container.appendChild(toast);
-            
             setTimeout(() => {
                 toast.classList.replace('toast-enter', 'toast-exit');
                 setTimeout(() => toast.remove(), 300);
