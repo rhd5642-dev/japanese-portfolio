@@ -1,247 +1,1148 @@
-<script>
-        // --- State & Initialization ---
-        let isTeacherMode = false;
-        let currentTab = 'record';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일본어 수업 포트폴리오</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', 'Inter', sans-serif; background-color: #f8fafc; }
+        .hidden-view { display: none !important; }
+        .tab-active { border-bottom: 2px solid #6366f1; color: #4f46e5; font-weight: 600; }
+        .tab-inactive { color: #6b7280; font-weight: 500; }
+        .tab-inactive:hover { color: #111827; }
         
-        // 선생님이 주신 기본 GAS URL을 초기값으로 세팅
-        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwarE2Dxr3_0hOuYLnNh-pX3YwYGcw9FqlgODefDoVnxwp-Jv4G15NiozlP1Wh-KQp2/exec";
-        let teacherPassword = localStorage.getItem('teacherPassword') || '1234';
-        let gasUrl = localStorage.getItem('gasUrl') || DEFAULT_GAS_URL;
+        .stamp-slot {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 22px; transition: all 0.3s ease;
+        }
+        .stamp-empty { border: 2px dashed #cbd5e1; background-color: #f8fafc; color: #94a3b8; }
+        .stamp-filled { border: 2px solid #6366f1; background-color: #eef2ff; animation: pop 0.3s ease-out; }
         
-        // --- DOM Elements ---
-        const modeToggleBtn = document.getElementById('modeToggleBtn');
-        const modeToggleText = document.getElementById('modeToggleText');
-        const teacherAuthModal = document.getElementById('teacherAuthModal');
-        const teacherAuthForm = document.getElementById('teacherAuthForm');
+        @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
         
-        const studentView = document.getElementById('studentView');
-        const teacherTabs = document.getElementById('teacherTabs');
-        const recordTab = document.getElementById('recordTab');
-        const noticeTab = document.getElementById('noticeTab');
-        const manageTab = document.getElementById('manageTab');
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
         
-        // --- UI Helper Functions ---
-        function showToast(message, type = 'success') {
+        .toast-enter { animation: toastIn 0.3s ease-out forwards; }
+        .toast-exit { animation: toastOut 0.3s ease-in forwards; }
+        
+        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 z-10 flex-shrink-0">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                        <i class="fa-solid fa-language text-xl"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">일본어 수업 포트폴리오</span>
+                </div>
+                <div class="flex items-center">
+                    <button id="modeToggleBtn" type="button" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span id="modeToggleText">교사용으로 전환</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Teacher Auth Modal -->
+    <div id="teacherAuthModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden-view p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-indigo-600"></i> 교사용 인증
+                </h3>
+                <button id="closeAuthModalBtn" type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="teacherAuthForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">교사용 비밀번호</label>
+                    <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력 (초기: 1234)" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1 font-medium">* 초기 비밀번호는 <span class="text-indigo-600 font-bold">1234</span> 입니다.</p>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer">취소</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition shadow-sm cursor-pointer">확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teacher Password Change Modal -->
+    <div id="changePassModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden-view p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-indigo-600"></i> 교사 비밀번호 변경
+                </h3>
+                <button id="closeChangePassModalBtn" type="button" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="changePassForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+                    <input type="password" id="currentPassInput" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                    <input type="password" id="newPassInput" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="cancelChangePassBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer">취소</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition shadow-sm cursor-pointer">비밀번호 변경</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow overflow-y-auto pb-20">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            
+            <!-- Tabs (Teacher Mode Only) -->
+            <div id="teacherTabs" class="hidden-view mb-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex gap-6">
+                    <button id="tab-record" class="pb-3 px-1 tab-active cursor-pointer">기록 및 도장 부여</button>
+                    <button id="tab-notice" class="pb-3 px-1 tab-inactive cursor-pointer">알림사항 관리</button>
+                    <button id="tab-manage" class="pb-3 px-1 tab-inactive cursor-pointer">전체 학생 관리</button>
+                </div>
+                <!-- GAS Web App URL Config & Password Change -->
+                <div class="pb-3 flex flex-wrap items-center gap-2 text-xs">
+                    <span class="text-gray-500 font-medium"><i class="fa-solid fa-link text-indigo-500"></i> GAS URL:</span>
+                    <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" 
+                        class="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none w-52 text-xs">
+                    <button id="saveGasBtn" class="bg-gray-800 hover:bg-black text-white px-2.5 py-1 rounded transition cursor-pointer">저장</button>
+                    <button id="openChangePassBtn" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded transition cursor-pointer flex items-center gap-1 font-medium ml-1">
+                        <i class="fa-solid fa-key"></i> 비밀번호 변경
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 1. STUDENT VIEW (Dashboard)    -->
+            <!-- ============================== -->
+            <div id="studentView">
+                <!-- Search Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6 mb-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800">
+                        <i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기
+                    </h2>
+                    <form id="searchForm" class="flex flex-col gap-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required
+                                class="flex-1 min-w-[120px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            
+                            <input type="text" id="searchClass" placeholder="반 (자동)" required readonly
+                                class="flex-1 min-w-[80px] px-4 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none text-gray-600">
+                                
+                            <input type="text" id="searchId" placeholder="학번 (자동)" required readonly
+                                class="flex-1 min-w-[100px] px-4 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none text-gray-600">
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="password" id="searchPassword" placeholder="비밀번호 (초기설정: 학번)" required
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition whitespace-nowrap shadow-sm cursor-pointer">
+                                조회하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Teacher Notice (Visible to students) -->
+                <div id="noticeBoard" class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 shadow-sm hidden-view">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 text-indigo-500"><i class="fa-solid fa-bullhorn text-lg"></i></div>
+                        <div class="flex-grow">
+                            <h3 class="font-bold text-indigo-900 mb-2 text-sm">선생님의 알림</h3>
+                            <ul id="noticeList" class="text-sm text-indigo-800 space-y-3">
+                                <!-- Notices injected here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content (Hidden until searched) -->
+                <div id="dashboardContent" class="hidden-view space-y-6">
+                    
+                    <!-- Welcome Msg -->
+                    <div class="flex justify-between items-end">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <span id="displayClass" class="text-indigo-600 text-lg mr-1"></span>
+                            <span id="displayName" class="text-indigo-600"></span> 학생의 포트폴리오
+                        </h2>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 수업 참여 카드 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden flex flex-col justify-between">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-pink-50 rounded-bl-full -z-10"></div>
+                            <div>
+                                <h3 class="text-gray-500 text-sm font-medium mb-1">수업 참여도</h3>
+                                <div class="flex items-baseline gap-2 mb-3">
+                                    <span class="text-3xl font-bold text-gray-800" id="participationScoreCount">0</span>
+                                    <span class="text-sm font-medium text-gray-500" id="participationScoreLabel">점</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 border-t pt-3 mt-2">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xl">💮</span>
+                                    <span class="text-sm font-bold text-gray-700"><span id="goodStampsCount">0</span>개</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xl">😢</span>
+                                    <span class="text-sm font-bold text-gray-700"><span id="effortStampsCount">0</span>개</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 학습지 완료 카드 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden flex flex-col justify-between">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-10"></div>
+                            <div>
+                                <h3 class="text-gray-500 text-sm font-medium mb-1">학습지 완료</h3>
+                                <div class="flex items-baseline gap-2 mb-3">
+                                    <span class="text-3xl font-bold text-gray-800" id="worksheetScoreCount">0</span>
+                                    <span class="text-sm font-medium text-gray-500" id="worksheetScoreLabel">점</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 border-t pt-3 mt-2">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xl">📝</span>
+                                    <span class="text-sm font-bold text-gray-700"><span id="worksheetStampsCount">0</span>개</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 종합 점수 및 프로그레스 바 -->
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-md p-6 text-white">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-medium text-indigo-100">종합 누적 점수</h3>
+                            <div class="text-right">
+                                <span class="text-3xl font-bold" id="totalScore">0</span>
+                                <span class="text-indigo-200" id="totalScoreLabel"> / 100점</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-white/20 rounded-full h-3 mb-2 overflow-hidden">
+                            <div id="scoreProgressBar" class="bg-white h-3 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="text-xs text-indigo-100 text-right">점수 공개 대기 중입니다.</p>
+                    </div>
+
+                    <!-- Stamp Boards (도장판) -->
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-xl shadow-sm border border-pink-100 p-5">
+                            <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <span class="text-xl">💮</span> 참 잘했어요 (참여도장)
+                            </h3>
+                            <div id="goodStampBoard" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-blue-100 p-5">
+                            <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <span class="text-xl">😢</span> 좀 더 분발하세요 (참여도장)
+                            </h3>
+                            <div id="effortStampBoard" class="flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-green-100 p-5">
+                            <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <span class="text-xl">📝</span> 학습지 완료
+                            </h3>
+                            <div id="worksheetStampBoard" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline/Records -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-700">상세 기록 목록</h3>
+                            <span class="text-xs text-gray-500">최근 순</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b">
+                                        <th class="px-5 py-3 font-medium">날짜/회차</th>
+                                        <th class="px-5 py-3 font-medium">항목</th>
+                                        <th class="px-5 py-3 font-medium">내역</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentRecordsTable" class="divide-y divide-gray-100">
+                                    <!-- Records injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- 2. TEACHER VIEW                -->
+            <!-- ============================== -->
+            <!-- Tab 1: Record Input -->
+            <div id="recordTab" class="hidden-view">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-3">기록 및 도장 부여</h2>
+                    
+                    <form id="addRecordForm" class="space-y-5">
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">날짜</label>
+                                <input type="date" id="recordDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">회차 선택</label>
+                                <select id="recordSession" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                    <option value="" disabled selected>회차를 선택하세요</option>
+                                    <option value="1회차">1회차</option><option value="2회차">2회차</option>
+                                    <option value="3회차">3회차</option><option value="4회차">4회차</option>
+                                    <option value="5회차">5회차</option><option value="6회차">6회차</option>
+                                    <option value="7회차">7회차</option><option value="8회차">8회차</option>
+                                    <option value="9회차">9회차</option><option value="10회차">10회차</option>
+                                    <option value="11회차">11회차</option><option value="12회차">12회차</option>
+                                    <option value="13회차">13회차</option><option value="14회차">14회차</option>
+                                    <option value="15회차">15회차</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                                <input type="text" id="recordName" placeholder="홍길동" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">학번 (자동)</label>
+                                <input type="text" id="recordId" placeholder="10101" required readonly class="w-full px-4 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none text-gray-600">
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">반 (자동)</label>
+                                <input type="text" id="recordClass" placeholder="1반" required readonly class="w-full px-4 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none text-gray-600">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">평가 항목</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
+                                    <input type="radio" name="category" value="good" class="sr-only" required>
+                                    <span class="text-2xl">💮</span>
+                                    <span class="text-sm font-medium">참 잘했어요</span>
+                                </label>
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
+                                    <input type="radio" name="category" value="effort" class="sr-only">
+                                    <span class="text-2xl">😢</span>
+                                    <span class="text-sm font-medium text-center">좀 더 분발하세요</span>
+                                </label>
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-green-500 has-[:checked]:bg-green-50 transition">
+                                    <input type="radio" name="category" value="worksheet" class="sr-only">
+                                    <span class="text-2xl">📝</span>
+                                    <span class="text-sm font-medium">학습지 완료</span>
+                                </label>
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
+                                    <input type="radio" name="category" value="participationScore" class="sr-only">
+                                    <i class="fa-solid fa-hand-sparkles text-2xl text-blue-500 mt-1"></i>
+                                    <span class="text-sm font-medium">참여 점수 부여</span>
+                                </label>
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 transition">
+                                    <input type="radio" name="category" value="worksheetScore" class="sr-only">
+                                    <i class="fa-solid fa-file-signature text-2xl text-green-500 mt-1"></i>
+                                    <span class="text-sm font-medium">학습지 점수 부여</span>
+                                </label>
+                                <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 flex flex-col items-center gap-2 has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 transition">
+                                    <input type="radio" name="category" value="score" class="sr-only">
+                                    <i class="fa-solid fa-star text-2xl text-purple-500 mt-1"></i>
+                                    <span class="text-sm font-medium">기타 수행 점수</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="scoreInputContainer" class="hidden-view">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">점수 입력 (숫자)</label>
+                            <input type="number" id="recordScore" placeholder="예: 10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-sm mt-4 cursor-pointer">
+                            기록 저장하기
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab 2: Notice Management -->
+            <div id="noticeTab" class="hidden-view">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl mx-auto">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-3">학생 알림사항 등록</h2>
+                    <p class="text-sm text-gray-500 mb-4">등록한 알림은 학생들의 조회 화면 상단에 표시됩니다.</p>
+                    <form id="addNoticeForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">표시될 내용</label>
+                            <textarea id="noticeContent" rows="3" required placeholder="예: 다음 주 화요일은 히라가나 수행평가가 있습니다." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">사진 첨부 (선택)</label>
+                            <input type="file" id="noticeImage" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer transition">
+                        </div>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm w-full sm:w-auto cursor-pointer">
+                            공지 등록
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab 3: Management/Overview -->
+            <div id="manageTab" class="hidden-view">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                        <h2 class="text-xl font-bold text-gray-700">전체 학생 현황</h2>
+                        <div class="flex items-center gap-4">
+                            <!-- 점수 공개 토글 버튼 -->
+                            <div class="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+                                <span class="text-sm font-bold text-gray-700">학생에게 점수 공개</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="publishToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                                </label>
+                            </div>
+                            <button id="refreshOverviewBtn" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2 px-4 rounded-lg border border-indigo-200 transition font-medium flex items-center cursor-pointer">
+                                <i class="fa-solid fa-arrows-rotate mr-1"></i> 새로고침
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto border rounded-lg">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-50 text-gray-600 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 font-medium">반</th>
+                                    <th class="px-4 py-3 font-medium">학번</th>
+                                    <th class="px-4 py-3 font-medium">이름</th>
+                                    <th class="px-4 py-3 font-medium">비밀번호</th>
+                                    <th class="px-4 py-3 font-medium text-center">참 잘했어요(💮)</th>
+                                    <th class="px-4 py-3 font-medium text-center">분발하세요(😢)</th>
+                                    <th class="px-4 py-3 font-medium text-center">학습지(📝)</th>
+                                    <th class="px-4 py-3 font-medium text-center">참여 점수</th>
+                                    <th class="px-4 py-3 font-medium text-center">학습지 점수</th>
+                                    <th class="px-4 py-3 font-medium text-right">총합 점수</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y" id="overviewTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- State ---
+        let currentMode = 'student'; // 'student' or 'teacher'
+        let isScorePublished = false;
+        let gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxAap6enqyRUfs2S3SCq2EeHN1bjpfa6tbO-7J70vv7Mg7EWx4ck_qUuNkPEY1vs2LT/exec'; // Google Apps Script Web App URL
+        let teacherPassword = localStorage.getItem('teacherPassword') || '1234'; // Default teacher password
+
+        // Mock Database (Fallback)
+        let mockNotices = [
+            { date: '2026-08-15', content: '다음 주 화요일은 히라가나 쓰기 수행평가가 있습니다. 연습장 꼭 챙겨오세요! 🌸', imageUrl: '' },
+            { date: '2026-08-10', content: '2단원 학습지 제출 기한은 이번 주 금요일까지입니다.', imageUrl: '' }
+        ];
+
+        let mockStudentData = {
+            '10101': { classNum: '1반', id: '10101', name: '홍길동', password: '10101', goodStamps: 5, effortStamps: 1, worksheetStamps: 3, participationScore: 10, worksheetScore: 5, score: 15, records: [
+                { date: '2026-08-18', session: '3회차', category: 'worksheet', value: '도장 획득' },
+                { date: '2026-08-18', session: '3회차', category: 'participationScore', value: '10점' },
+                { date: '2026-08-15', session: '2회차', category: 'good', value: '도장 획득' },
+                { date: '2026-08-10', session: '1회차', category: 'effort', value: '도장 획득' }
+            ]},
+            '10102': { classNum: '1반', id: '10102', name: '김사쿠라', password: '10102', goodStamps: 12, effortStamps: 0, worksheetStamps: 8, participationScore: 30, worksheetScore: 20, score: 50, records: [
+                { date: '2026-08-18', session: '3회차', category: 'good', value: '도장 획득' }
+            ]},
+            '10103': { classNum: '2반', id: '10103', name: '이후지', password: '10103', goodStamps: 0, effortStamps: 2, worksheetStamps: 0, participationScore: 0, worksheetScore: 0, score: 0, records: [] }
+        };
+
+        // DOM Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('recordDate');
+            if (dateInput) dateInput.valueAsDate = new Date();
+            
+            // Bind Mode Toggle Button
+            const modeToggleBtn = document.getElementById('modeToggleBtn');
+            if (modeToggleBtn) {
+                modeToggleBtn.addEventListener('click', toggleMode);
+            }
+
+            // Bind Teacher Auth Modal Controls
+            document.getElementById('teacherAuthForm')?.addEventListener('submit', handleTeacherAuthSubmit);
+            document.getElementById('closeAuthModalBtn')?.addEventListener('click', closeTeacherAuthModal);
+            document.getElementById('cancelAuthBtn')?.addEventListener('click', closeTeacherAuthModal);
+
+            // Bind Change Password Modal Controls
+            document.getElementById('openChangePassBtn')?.addEventListener('click', openChangePassModal);
+            document.getElementById('closeChangePassModalBtn')?.addEventListener('click', closeChangePassModal);
+            document.getElementById('cancelChangePassBtn')?.addEventListener('click', closeChangePassModal);
+            document.getElementById('changePassForm')?.addEventListener('submit', handleChangePasswordSubmit);
+
+            // Bind Teacher Tabs
+            document.getElementById('tab-record')?.addEventListener('click', () => switchTab('record'));
+            document.getElementById('tab-notice')?.addEventListener('click', () => switchTab('notice'));
+            document.getElementById('tab-manage')?.addEventListener('click', () => switchTab('manage'));
+
+            // Bind Forms & Buttons
+            document.getElementById('searchForm')?.addEventListener('submit', handleSearch);
+            document.getElementById('searchName')?.addEventListener('input', autoFillStudentInfo);
+            document.getElementById('recordName')?.addEventListener('input', autoFillTeacherForm);
+            document.getElementById('saveGasBtn')?.addEventListener('click', saveGasUrl);
+            document.getElementById('addRecordForm')?.addEventListener('submit', handleAddRecord);
+            document.getElementById('addNoticeForm')?.addEventListener('submit', handleAddNotice);
+            document.getElementById('publishToggle')?.addEventListener('change', toggleScorePublish);
+            document.getElementById('refreshOverviewBtn')?.addEventListener('click', updateOverviewTable);
+
+            // Bind Category Radio Buttons
+            document.querySelectorAll('input[name="category"]').forEach(radio => {
+                radio.addEventListener('change', toggleScoreInput);
+            });
+
+            loadSavedGasUrl();
+            fetchNotices();
+            fetchPublishStatus();
+            updateOverviewTable();
+        });
+
+        // Mode Switching Function (Student <-> Teacher)
+        function toggleMode() {
+            if (currentMode === 'student') {
+                openTeacherAuthModal();
+            } else {
+                switchToStudentMode();
+            }
+        }
+
+        // Open/Close Teacher Auth Modal
+        function openTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            const passInput = document.getElementById('teacherPasswordInput');
+            if (modal) modal.classList.remove('hidden-view');
+            if (passInput) {
+                passInput.value = '';
+                passInput.focus();
+            }
+        }
+
+        function closeTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            if (modal) modal.classList.add('hidden-view');
+        }
+
+        // Handle Teacher Auth Form Submission
+        function handleTeacherAuthSubmit(e) {
+            e.preventDefault();
+            const passInput = document.getElementById('teacherPasswordInput').value.trim();
+
+            if (passInput === teacherPassword) {
+                closeTeacherAuthModal();
+                switchToTeacherMode();
+                showToast('교사용 모드로 전환되었습니다.');
+            } else {
+                showToast('교사용 비밀번호가 올바르지 않습니다.', true);
+            }
+        }
+
+        function switchToTeacherMode() {
+            currentMode = 'teacher';
+            const btn = document.getElementById('modeToggleBtn');
+            const btnText = document.getElementById('modeToggleText');
+            const teacherTabs = document.getElementById('teacherTabs');
+            const studentView = document.getElementById('studentView');
+
+            btn.className = 'text-sm bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+            if (btnText) btnText.textContent = '학생용으로 전환';
+            
+            teacherTabs?.classList.remove('hidden-view');
+            studentView?.classList.add('hidden-view');
+            switchTab('record');
+        }
+
+        function switchToStudentMode() {
+            currentMode = 'student';
+            const btn = document.getElementById('modeToggleBtn');
+            const btnText = document.getElementById('modeToggleText');
+            const teacherTabs = document.getElementById('teacherTabs');
+            const studentView = document.getElementById('studentView');
+            const recordTab = document.getElementById('recordTab');
+            const noticeTab = document.getElementById('noticeTab');
+            const manageTab = document.getElementById('manageTab');
+
+            btn.className = 'text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition font-medium cursor-pointer shadow-sm flex items-center gap-2';
+            if (btnText) btnText.textContent = '교사용으로 전환';
+            
+            teacherTabs?.classList.add('hidden-view');
+            studentView?.classList.remove('hidden-view');
+            recordTab?.classList.add('hidden-view');
+            noticeTab?.classList.add('hidden-view');
+            manageTab?.classList.add('hidden-view');
+            showToast('학생용 모드로 전환되었습니다.');
+        }
+
+        // Change Teacher Password Modal Functions
+        function openChangePassModal() {
+            const modal = document.getElementById('changePassModal');
+            if (modal) modal.classList.remove('hidden-view');
+            document.getElementById('currentPassInput').value = '';
+            document.getElementById('newPassInput').value = '';
+        }
+
+        function closeChangePassModal() {
+            const modal = document.getElementById('changePassModal');
+            if (modal) modal.classList.add('hidden-view');
+        }
+
+        function handleChangePasswordSubmit(e) {
+            e.preventDefault();
+            const curr = document.getElementById('currentPassInput').value.trim();
+            const next = document.getElementById('newPassInput').value.trim();
+
+            if (curr !== teacherPassword) {
+                showToast('현재 비밀번호가 불일치합니다.', true);
+                return;
+            }
+
+            if (!next) {
+                showToast('새 비밀번호를 입력해 주세요.', true);
+                return;
+            }
+
+            teacherPassword = next;
+            localStorage.setItem('teacherPassword', next);
+            closeChangePassModal();
+            showToast('교사 비밀번호가 성공적으로 변경되었습니다.');
+        }
+
+        // Tab Switching for Teacher View
+        function switchTab(tabName) {
+            ['record', 'notice', 'manage'].forEach(tab => {
+                const tabBtn = document.getElementById('tab-' + tab);
+                const tabContent = document.getElementById(tab + 'Tab');
+                
+                if (tab === tabName) {
+                    if (tabBtn) tabBtn.className = 'pb-3 px-1 tab-active cursor-pointer';
+                    if (tabContent) tabContent.classList.remove('hidden-view');
+                } else {
+                    if (tabBtn) tabBtn.className = 'pb-3 px-1 tab-inactive cursor-pointer';
+                    if (tabContent) tabContent.classList.add('hidden-view');
+                }
+            });
+
+            if (tabName === 'manage') {
+                updateOverviewTable();
+            }
+        }
+
+        // Auto-fill Student Info on Search Name Input
+        function autoFillStudentInfo() {
+            const nameInput = document.getElementById('searchName').value.trim();
+            const classInput = document.getElementById('searchClass');
+            const idInput = document.getElementById('searchId');
+
+            const found = Object.values(mockStudentData).find(s => s.name === nameInput);
+            if (found) {
+                classInput.value = found.classNum;
+                idInput.value = found.id;
+            } else {
+                classInput.value = '';
+                idInput.value = '';
+            }
+        }
+
+        // Auto-fill Teacher Form on Student Name Input
+        function autoFillTeacherForm() {
+            const nameInput = document.getElementById('recordName').value.trim();
+            const classInput = document.getElementById('recordClass');
+            const idInput = document.getElementById('recordId');
+
+            const found = Object.values(mockStudentData).find(s => s.name === nameInput);
+            if (found) {
+                classInput.value = found.classNum;
+                idInput.value = found.id;
+            } else {
+                classInput.value = '1반';
+                idInput.value = '10100';
+            }
+        }
+
+        // Toggle Score Input visibility based on radio selection
+        function toggleScoreInput() {
+            const category = document.querySelector('input[name="category"]:checked')?.value;
+            const container = document.getElementById('scoreInputContainer');
+            const scoreInput = document.getElementById('recordScore');
+
+            if (category === 'participationScore' || category === 'worksheetScore' || category === 'score') {
+                container?.classList.remove('hidden-view');
+                if (scoreInput) scoreInput.required = true;
+            } else {
+                container?.classList.add('hidden-view');
+                if (scoreInput) {
+                    scoreInput.required = false;
+                    scoreInput.value = '';
+                }
+            }
+        }
+
+        // Save & Load GAS Web App URL
+        function saveGasUrl() {
+            const input = document.getElementById('gasUrlInput').value.trim();
+            gasWebAppUrl = input;
+            showToast(gasWebAppUrl ? 'Google Apps Script URL이 설정되었습니다.' : 'URL이 해제되어 모의 데이터 모드로 작동합니다.');
+            fetchNotices();
+            updateOverviewTable();
+        }
+
+        function loadSavedGasUrl() {
+            const input = document.getElementById('gasUrlInput');
+            if (input && gasWebAppUrl) {
+                input.value = gasWebAppUrl;
+            }
+        }
+
+        // Centralized GAS API Communication
+        async function callGasApi(action, payload = {}) {
+            if (!gasWebAppUrl) return null;
+
+            try {
+                const response = await fetch(gasWebAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: action, ...payload })
+                });
+
+                if (!response.ok) throw new Error('네트워크 응답 오류');
+                return await response.json();
+            } catch (error) {
+                console.error('GAS API 호출 실패:', error);
+                showToast('구글 앱스 스크립트 통신 중 오류가 발생했습니다.', true);
+                return null;
+            }
+        }
+
+        // Fetch Notices
+        async function fetchNotices() {
+            const remoteData = await callGasApi('getNotices');
+            if (remoteData && remoteData.notices) {
+                mockNotices = remoteData.notices;
+            }
+            renderNotices();
+        }
+
+        function renderNotices() {
+            const board = document.getElementById('noticeBoard');
+            const list = document.getElementById('noticeList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (!mockNotices || mockNotices.length === 0) {
+                board?.classList.add('hidden-view');
+                return;
+            }
+
+            board?.classList.remove('hidden-view');
+            mockNotices.forEach(n => {
+                const li = document.createElement('li');
+                li.className = "flex flex-col gap-1 border-b border-indigo-100/60 pb-2 last:border-0 last:pb-0";
+                
+                let imgHtml = '';
+                if (n.imageUrl) {
+                    imgHtml = `<img src="${n.imageUrl}" alt="공지 이미지" class="max-h-48 rounded-lg my-1 object-cover shadow-sm">`;
+                }
+
+                li.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-medium">${n.date}</span>
+                    </div>
+                    <p class="text-gray-800 text-sm whitespace-pre-wrap">${n.content}</p>
+                    ${imgHtml}
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // Fetch Score Publish Status
+        async function fetchPublishStatus() {
+            const remoteData = await callGasApi('getPublishStatus');
+            if (remoteData && typeof remoteData.isPublished === 'boolean') {
+                isScorePublished = remoteData.isPublished;
+                const toggle = document.getElementById('publishToggle');
+                if (toggle) toggle.checked = isScorePublished;
+            }
+        }
+
+        // Handle Student Search
+        async function handleSearch(e) {
+            e.preventDefault();
+            const name = document.getElementById('searchName').value.trim();
+            const id = document.getElementById('searchId').value.trim();
+            const classNum = document.getElementById('searchClass').value.trim();
+            const password = document.getElementById('searchPassword').value.trim();
+            
+            const btn = e.target.querySelector('button');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            let data = null;
+
+            if (gasWebAppUrl) {
+                const res = await callGasApi('getStudentData', { id: id, password: password, name: name, classNum: classNum });
+                if (res) {
+                    if (!res.success) {
+                        showToast(res.message || '비밀번호가 일치하지 않거나 조회에 실패했습니다.', true);
+                        btn.innerHTML = originalBtnText;
+                        return;
+                    }
+                    data = res.studentData;
+                }
+            }
+
+            if (!data) {
+                data = mockStudentData[id];
+                if (!data) {
+                    let newId = id || '10100';
+                    let newClass = classNum || '1반';
+                    data = {
+                        classNum: newClass, id: newId, name: name, password: newId,
+                        goodStamps: 0, effortStamps: 0, worksheetStamps: 0,
+                        participationScore: 0, worksheetScore: 0, score: 0, records: []
+                    };
+                    mockStudentData[newId] = data;
+                }
+
+                if (String(data.password) !== String(password)) {
+                    showToast('비밀번호가 일치하지 않습니다.', true);
+                    btn.innerHTML = originalBtnText;
+                    return;
+                }
+            }
+
+            renderStudentDashboard(data);
+            btn.innerHTML = originalBtnText;
+            showToast(name + ' 학생의 기록을 불러왔습니다.');
+        }
+
+        // Render Student Dashboard
+        function renderStudentDashboard(data) {
+            document.getElementById('dashboardContent')?.classList.remove('hidden-view');
+            document.getElementById('displayClass').textContent = data.classNum || '';
+            document.getElementById('displayName').textContent = data.name || '';
+
+            // Stamp Counts
+            document.getElementById('goodStampsCount').textContent = data.goodStamps || 0;
+            document.getElementById('effortStampsCount').textContent = data.effortStamps || 0;
+            document.getElementById('worksheetStampsCount').textContent = data.worksheetStamps || 0;
+
+            // Score Masking / Displaying Logic
+            if (isScorePublished) {
+                document.getElementById('participationScoreCount').textContent = data.participationScore || 0;
+                document.getElementById('participationScoreLabel').textContent = '점';
+
+                document.getElementById('worksheetScoreCount').textContent = data.worksheetScore || 0;
+                document.getElementById('worksheetScoreLabel').textContent = '점';
+
+                document.getElementById('totalScore').textContent = data.score || 0;
+                document.getElementById('totalScoreLabel').textContent = ' / 100점';
+            } else {
+                document.getElementById('participationScoreCount').textContent = '공개 전';
+                document.getElementById('participationScoreLabel').textContent = '';
+
+                document.getElementById('worksheetScoreCount').textContent = '공개 전';
+                document.getElementById('worksheetScoreLabel').textContent = '';
+
+                document.getElementById('totalScore').textContent = '공개 전';
+                document.getElementById('totalScoreLabel').textContent = '';
+            }
+
+            // Render Stamp Boards
+            renderStampBoard('goodStampBoard', data.goodStamps || 0, '💮');
+            renderStampBoard('effortStampBoard', data.effortStamps || 0, '😢');
+            renderStampBoard('worksheetStampBoard', data.worksheetStamps || 0, '📝');
+
+            // Progress Bar Logic
+            const progressBar = document.getElementById('scoreProgressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (isScorePublished) {
+                const maxVal = 100;
+                const percentage = Math.min(100, Math.max(0, ((data.score || 0) / maxVal) * 100));
+                if (progressBar) progressBar.style.width = percentage + '%';
+
+                if (progressText) {
+                    if (percentage >= 100) progressText.textContent = '축하합니다! 최고 목표 달성!';
+                    else if (percentage >= 70) progressText.textContent = '참 잘하고 있어요! 계속 파이팅!';
+                    else progressText.textContent = '조금씩 꾸준히 모아봐요!';
+                }
+            } else {
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.textContent = '점수 공개 대기 중입니다.';
+            }
+
+            // Render Records Table
+            const tbody = document.getElementById('studentRecordsTable');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!data.records || data.records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-5 py-6 text-center text-gray-400 text-sm">아직 등록된 기록이 없습니다.</td></tr>`;
+                return;
+            }
+
+            data.records.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50/80 transition";
+
+                let catBadge = '';
+                let catText = '';
+                if (rec.category === 'good') { catBadge = 'bg-pink-100 text-pink-700'; catText = '💮 참 잘했어요'; }
+                else if (rec.category === 'effort') { catBadge = 'bg-blue-100 text-blue-700'; catText = '😢 분발하세요'; }
+                else if (rec.category === 'worksheet') { catBadge = 'bg-green-100 text-green-700'; catText = '📝 학습지 완료'; }
+                else if (rec.category === 'participationScore') { catBadge = 'bg-indigo-100 text-indigo-700'; catText = '참여 점수'; }
+                else if (rec.category === 'worksheetScore') { catBadge = 'bg-teal-100 text-teal-700'; catText = '학습지 점수'; }
+                else { catBadge = 'bg-purple-100 text-purple-700'; catText = '기타 점수'; }
+
+                let displayVal = rec.value || '';
+                if (!isScorePublished && (rec.category === 'participationScore' || rec.category === 'worksheetScore' || rec.category === 'score')) {
+                    displayVal = '공개 전';
+                }
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3 text-sm text-gray-600">${rec.date} <span class="text-xs text-gray-400">(${rec.session || '1회차'})</span></td>
+                    <td class="px-5 py-3 text-sm"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${catBadge}">${catText}</span></td>
+                    <td class="px-5 py-3 text-sm font-medium text-gray-800">${displayVal}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Stamp Slot Icons
+        function renderStampBoard(boardId, count, emoji) {
+            const board = document.getElementById(boardId);
+            if (!board) return;
+            board.innerHTML = '';
+
+            const totalSlots = Math.max(10, Math.ceil((count + 1) / 10) * 10);
+
+            for (let i = 0; i < totalSlots; i++) {
+                const slot = document.createElement('div');
+                if (i < count) {
+                    slot.className = 'stamp-slot stamp-filled shadow-sm';
+                    slot.innerHTML = emoji;
+                } else {
+                    slot.className = 'stamp-slot stamp-empty';
+                    slot.innerHTML = `<span class="text-xs text-gray-300 font-medium">${i + 1}</span>`;
+                }
+                board.appendChild(slot);
+            }
+        }
+
+        // Teacher: Toggle score publish status
+        async function toggleScorePublish() {
+            const toggleBtn = document.getElementById('publishToggle');
+            if (!toggleBtn) return;
+            isScorePublished = toggleBtn.checked;
+
+            if (gasWebAppUrl) {
+                await callGasApi('setPublishStatus', { isPublished: isScorePublished });
+            }
+            
+            showToast(isScorePublished ? '학생들에게 점수가 공개됩니다.' : '학생들의 점수가 비공개 처리되었습니다.');
+            
+            const currentId = document.getElementById('searchId')?.value;
+            if (currentId && mockStudentData[currentId]) {
+                renderStudentDashboard(mockStudentData[currentId]);
+            }
+        }
+
+        // Teacher: Update Overview Table
+        async function updateOverviewTable() {
+            const tbody = document.getElementById('overviewTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (gasWebAppUrl) {
+                const res = await callGasApi('getAllStudents');
+                if (res && res.students) {
+                    mockStudentData = res.students;
+                }
+            }
+            
+            const students = Object.values(mockStudentData).sort((a, b) => {
+                if (a.classNum === b.classNum) return a.id.localeCompare(b.id);
+                return a.classNum.localeCompare(b.classNum);
+            });
+
+            students.forEach(std => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="px-4 py-3">${std.classNum}</td>
+                    <td class="px-4 py-3">${std.id}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${std.name}</td>
+                    <td class="px-4 py-3 text-gray-500">${std.password}</td>
+                    <td class="px-4 py-3 text-center text-pink-600 font-bold">${std.goodStamps || 0}</td>
+                    <td class="px-4 py-3 text-center text-blue-600 font-bold">${std.effortStamps || 0}</td>
+                    <td class="px-4 py-3 text-center text-green-600 font-bold">${std.worksheetStamps || 0}</td>
+                    <td class="px-4 py-3 text-center">${std.participationScore || 0}</td>
+                    <td class="px-4 py-3 text-center">${std.worksheetScore || 0}</td>
+                    <td class="px-4 py-3 text-right font-bold text-indigo-600">${std.score || 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Teacher: Handle Record Submit
+        async function handleAddRecord(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('recordDate').value;
+            const session = document.getElementById('recordSession').value;
+            const name = document.getElementById('recordName').value.trim();
+            const id = document.getElementById('recordId').value.trim() || '10100';
+            const classNum = document.getElementById('recordClass').value.trim() || '1반';
+            const category = document.querySelector('input[name="category"]:checked')?.value;
+            const scoreVal = document.getElementById('recordScore')?.value;
+
+            if (!category) {
+                showToast('평가 항목을 선택해 주세요.', true);
+                return;
+            }
+
+            let valueText = '도장 획득';
+            if (category === 'participationScore' || category === 'worksheetScore' || category === 'score') {
+                valueText = scoreVal + '점';
+            }
+
+            const recordPayload = {
+                date: date,
+                session: session,
+                name: name,
+                id: id,
+                classNum: classNum,
+                category: category,
+                scoreVal: Number(scoreVal) || 0,
+                valueText: valueText
+            };
+
+            if (gasWebAppUrl) {
+                const res = await callGasApi('addRecord', recordPayload);
+                if (res && res.success) {
+                    showToast(`${name} 학생의 기록이 저장되었습니다.`);
+                }
+            } else {
+                if (!mockStudentData[id]) {
+                    mockStudentData[id] = { classNum: classNum, id: id, name: name, password: id, goodStamps: 0, effortStamps: 0, worksheetStamps: 0, participationScore: 0, worksheetScore: 0, score: 0, records: [] };
+                }
+                if (category === 'good') mockStudentData[id].goodStamps++;
+                else if (category === 'effort') mockStudentData[id].effortStamps++;
+                else if (category === 'worksheet') mockStudentData[id].worksheetStamps++;
+                else if (category === 'participationScore') { mockStudentData[id].participationScore += Number(scoreVal); mockStudentData[id].score += Number(scoreVal); }
+                else if (category === 'worksheetScore') { mockStudentData[id].worksheetScore += Number(scoreVal); mockStudentData[id].score += Number(scoreVal); }
+                else if (category === 'score') { mockStudentData[id].score += Number(scoreVal); }
+
+                mockStudentData[id].records.unshift({ date: date, session: session, category: category, value: valueText });
+                showToast(`${name} 학생의 기록이 저장되었습니다.`);
+            }
+
+            document.getElementById('recordName').value = '';
+            document.getElementById('recordId').value = '';
+            document.getElementById('recordClass').value = '';
+            if (document.getElementById('recordScore')) document.getElementById('recordScore').value = '';
+        }
+
+        // Teacher: Handle Notice Submit
+        async function handleAddNotice(e) {
+            e.preventDefault();
+            const content = document.getElementById('noticeContent').value;
+            const fileInput = document.getElementById('noticeImage');
+            
+            const today = new Date();
+            const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            
+            const btn = e.target.querySelector('button');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 등록 중...';
+            btn.disabled = true;
+
+            const saveNotice = async (imgData = null) => {
+                const noticeData = { date: dateStr, content: content, imageUrl: imgData };
+                
+                if (gasWebAppUrl) {
+                    await callGasApi('addNotice', noticeData);
+                    await fetchNotices();
+                    showToast('알림이 성공적으로 등록되었습니다.');
+                } else {
+                    mockNotices.unshift(noticeData);
+                    renderNotices();
+                    showToast('알림이 성공적으로 등록되었습니다.');
+                }
+
+                document.getElementById('addNoticeForm').reset();
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    saveNotice(event.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveNotice();
+            }
+        }
+
+        // Toast Notification Helper
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
             const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-indigo-600' : 'bg-red-500';
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
-            
-            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 toast-enter pointer-events-auto`;
-            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span class="text-sm font-medium">${message}</span>`;
-            
-            document.getElementById('toastContainer').appendChild(toast);
-            
+            toast.className = `px-4 py-3 rounded-lg text-white font-medium text-sm shadow-lg pointer-events-auto toast-enter ${isError ? 'bg-red-500' : 'bg-gray-800'}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
             setTimeout(() => {
-                toast.classList.replace('toast-enter', 'toast-exit');
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-
-        // --- Mode Switching ---
-        modeToggleBtn.addEventListener('click', () => {
-            if (!isTeacherMode) {
-                teacherAuthModal.classList.remove('hidden-view');
-            } else {
-                isTeacherMode = false;
-                modeToggleBtn.innerHTML = `<i class="fa-solid fa-user-gear"></i> <span id="modeToggleText">교사용으로 전환</span>`;
-                studentView.classList.remove('hidden-view');
-                teacherTabs.classList.add('hidden-view');
-                recordTab.classList.add('hidden-view');
-                noticeTab.classList.add('hidden-view');
-                manageTab.classList.add('hidden-view');
-                showToast('학생 모드로 전환되었습니다.');
-            }
-        });
-
-        document.getElementById('closeAuthModalBtn').addEventListener('click', () => teacherAuthModal.classList.add('hidden-view'));
-        document.getElementById('cancelAuthBtn').addEventListener('click', () => teacherAuthModal.classList.add('hidden-view'));
-
-        teacherAuthForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('teacherPasswordInput').value;
-            if (input === teacherPassword) {
-                isTeacherMode = true;
-                teacherAuthModal.classList.add('hidden-view');
-                document.getElementById('teacherPasswordInput').value = '';
-                
-                modeToggleBtn.innerHTML = `<i class="fa-solid fa-user-graduate"></i> <span id="modeToggleText">학생용으로 전환</span>`;
-                studentView.classList.add('hidden-view');
-                teacherTabs.classList.remove('hidden-view');
-                switchTab('record');
-                showToast('교사 모드로 인증되었습니다.');
-                
-                document.getElementById('gasUrlInput').value = gasUrl;
-            } else {
-                showToast('비밀번호가 일치하지 않습니다.', 'error');
-            }
-        });
-
-        // --- Teacher Tabs Logic ---
-        const tabs = {
-            record: { btn: document.getElementById('tab-record'), view: recordTab },
-            notice: { btn: document.getElementById('tab-notice'), view: noticeTab },
-            manage: { btn: document.getElementById('tab-manage'), view: manageTab }
-        };
-
-        function switchTab(tabId) {
-            Object.keys(tabs).forEach(id => {
-                tabs[id].btn.className = 'pb-3 px-1 cursor-pointer ' + (id === tabId ? 'tab-active' : 'tab-inactive');
-                if (id === tabId) {
-                    tabs[id].view.classList.remove('hidden-view');
-                } else {
-                    tabs[id].view.classList.add('hidden-view');
-                }
-            });
-            currentTab = tabId;
-        }
-
-        document.getElementById('tab-record').addEventListener('click', () => switchTab('record'));
-        document.getElementById('tab-notice').addEventListener('click', () => switchTab('notice'));
-        document.getElementById('tab-manage').addEventListener('click', () => switchTab('manage'));
-
-        // --- Student Search (GET 요청) ---
-        document.getElementById('searchForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const searchName = document.getElementById('searchName').value.trim();
-            const searchPassword = document.getElementById('searchPassword').value.trim();
-            
-            showToast('데이터를 불러오는 중입니다...', 'success');
-            
-            try {
-                // 구글 시트에서 학생 데이터 조회 (이름, 비밀번호 매칭)
-                const response = await fetch(`${gasUrl}?type=search&name=${encodeURIComponent(searchName)}&password=${encodeURIComponent(searchPassword)}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    showToast('학생 정보를 찾을 수 없거나 비밀번호가 틀렸습니다.', 'error');
-                    return;
-                }
-
-                showToast(`${searchName} 학생의 데이터를 불러왔습니다.`);
-                document.getElementById('dashboardContent').classList.remove('hidden-view');
-                
-                document.getElementById('displayName').innerText = data.name || searchName;
-                document.getElementById('displayClass').innerText = data.class || '';
-                
-                // 받아온 데이터로 UI 업데이트 (키값은 구글 앱스 스크립트 설정에 따라 변경 필요)
-                updateStamps('goodStampBoard', 10, data.goodStamps || 0, '💮');
-                updateStamps('effortStampBoard', 5, data.effortStamps || 0, '😢');
-                updateStamps('worksheetStampBoard', 10, data.worksheetStamps || 0, '📝');
-                
-                document.getElementById('participationScoreCount').innerText = data.participationScore || 0;
-                document.getElementById('worksheetScoreCount').innerText = data.worksheetScore || 0;
-                document.getElementById('totalScore').innerText = data.totalScore || 0;
-                
-                setTimeout(() => {
-                    const total = data.totalScore || 0;
-                    document.getElementById('scoreProgressBar').style.width = `${total}%`;
-                }, 100);
-
-            } catch (error) {
-                console.error(error);
-                showToast('서버 통신 중 오류가 발생했습니다.', 'error');
-            }
-        });
-
-        function updateStamps(containerId, maxSlots, currentCount, icon) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            document.getElementById(containerId.replace('Board', 'Count')).innerText = currentCount;
-            
-            for (let i = 0; i < maxSlots; i++) {
-                const stamp = document.createElement('div');
-                if (i < currentCount) {
-                    stamp.className = 'stamp-slot stamp-filled shadow-sm';
-                    stamp.innerHTML = icon;
-                } else {
-                    stamp.className = 'stamp-slot stamp-empty';
-                }
-                container.appendChild(stamp);
-            }
-        }
-
-        // --- 교사 기록 추가 (POST 요청) ---
-        document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.innerText = "저장 중...";
-            submitBtn.disabled = true;
-
-            const postData = {
-                type: 'record',
-                date: document.getElementById('recordDate').value,
-                session: document.getElementById('recordSession').value,
-                name: document.getElementById('recordName').value,
-                category: document.querySelector('input[name="category"]:checked').value,
-                score: document.getElementById('recordScore').value || 0
-            };
-
-            try {
-                const response = await fetch(gasUrl, {
-                    method: 'POST',
-                    body: JSON.stringify(postData)
-                });
-                const result = await response.json();
-                
-                if(result.success) {
-                    showToast('기록이 성공적으로 저장되었습니다!');
-                    e.target.reset();
-                    scoreInputContainer.classList.add('hidden-view');
-                } else {
-                    showToast('저장에 실패했습니다.', 'error');
-                }
-            } catch (error) {
-                console.error(error);
-                showToast('통신 오류가 발생했습니다.', 'error');
-            } finally {
-                submitBtn.innerText = "기록 저장하기";
-                submitBtn.disabled = false;
-            }
-        });
-
-        // --- Settings & Auth Changes ---
-        document.getElementById('saveGasBtn').addEventListener('click', () => {
-            const url = document.getElementById('gasUrlInput').value;
-            localStorage.setItem('gasUrl', url);
-            gasUrl = url;
-            showToast('GAS URL이 저장되었습니다.');
-        });
-
-        const changePassModal = document.getElementById('changePassModal');
-        document.getElementById('openChangePassBtn').addEventListener('click', () => changePassModal.classList.remove('hidden-view'));
-        document.getElementById('closeChangePassModalBtn').addEventListener('click', () => changePassModal.classList.add('hidden-view'));
-        document.getElementById('cancelChangePassBtn').addEventListener('click', () => changePassModal.classList.add('hidden-view'));
-
-        document.getElementById('changePassForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const currentPass = document.getElementById('currentPassInput').value;
-            const newPass = document.getElementById('newPassInput').value;
-            
-            if (currentPass !== teacherPassword) {
-                showToast('현재 비밀번호가 틀렸습니다.', 'error');
-                return;
-            }
-            
-            teacherPassword = newPass;
-            localStorage.setItem('teacherPassword', newPass);
-            showToast('비밀번호가 성공적으로 변경되었습니다.');
-            changePassModal.classList.add('hidden-view');
-            e.target.reset();
-        });
-
-        const categoryRadios = document.querySelectorAll('input[name="category"]');
-        const scoreInputContainer = document.getElementById('scoreInputContainer');
-        const recordScore = document.getElementById('recordScore');
-
-        categoryRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (['participationScore', 'worksheetScore', 'score'].includes(e.target.value)) {
-                    scoreInputContainer.classList.remove('hidden-view');
-                    recordScore.required = true;
-                } else {
-                    scoreInputContainer.classList.add('hidden-view');
-                    recordScore.required = false;
-                }
-            });
-        });
     </script>
+</body>
+</html>
