@@ -58,7 +58,7 @@
                 <button id="closeAuthModalBtn" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="teacherAuthForm" class="space-y-4">
-                <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력 (초기: 1234)" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg">취소</button>
                     <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg">확인</button>
@@ -78,11 +78,10 @@
 
             <!-- Student View -->
             <div id="studentView">
-                <!-- 학생 검색 폼 부분 (이전과 동일하여 생략, 기존 코드 유지됨) -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기</h2>
                     <form id="searchForm" class="flex flex-col sm:flex-row gap-3">
-                        <input type="text" id="searchName" placeholder="이름" required class="flex-1 px-4 py-2 border rounded-lg">
+                        <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required class="flex-1 px-4 py-2 border rounded-lg">
                         <input type="password" id="searchPassword" placeholder="비밀번호(학번)" required class="flex-1 px-4 py-2 border rounded-lg">
                         <button type="submit" id="searchBtn" class="bg-indigo-600 text-white py-2 px-6 rounded-lg">조회하기</button>
                     </form>
@@ -103,11 +102,14 @@
                                     <option value="" disabled selected>회차 선택</option>
                                     <option value="1회차">1회차</option><option value="2회차">2회차</option>
                                     <option value="3회차">3회차</option><option value="4회차">4회차</option>
+                                    <option value="5회차">5회차</option><option value="6회차">6회차</option>
+                                    <option value="7회차">7회차</option><option value="8회차">8회차</option>
+                                    <option value="9회차">9회차</option><option value="10회차">10회차</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- 💡 반 선택 및 학생 다중 선택 UI -->
+                        <!-- 반 선택 및 학생 다중 선택 UI -->
                         <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                             <label class="block text-sm font-bold text-indigo-700 mb-2">1. 반 선택</label>
                             <select id="classSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
@@ -117,12 +119,12 @@
                             <div class="flex justify-between items-end mb-2">
                                 <label class="block text-sm font-bold text-indigo-700">2. 학생 선택 (다중 선택 가능)</label>
                                 <div class="flex gap-2">
-                                    <button type="button" id="selectAllBtn" class="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-md">전체 선택</button>
-                                    <button type="button" id="deselectAllBtn" class="text-xs px-3 py-1.5 bg-gray-300 text-gray-700 rounded-md">선택 해제</button>
+                                    <button type="button" id="selectAllBtn" class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition cursor-pointer">전체 선택</button>
+                                    <button type="button" id="deselectAllBtn" class="text-xs px-3 py-1.5 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-md transition cursor-pointer">선택 해제</button>
                                 </div>
                             </div>
                             <!-- 동적 학생 목록 그리드 -->
-                            <div id="studentGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-3 border border-gray-200 rounded-lg bg-white">
+                            <div id="studentGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-64 overflow-y-auto p-3 border border-gray-200 rounded-lg bg-white">
                                 <div class="col-span-full text-center text-gray-400 text-sm py-4">반을 먼저 선택해주세요.</div>
                             </div>
                         </div>
@@ -132,18 +134,18 @@
                             <label class="block text-sm font-medium mb-2">3. 평가 항목</label>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                                    <input type="radio" name="category" value="good" class="sr-only" required><span class="text-2xl">💮</span><span class="text-sm font-medium">참 잘했어요</span>
+                                    <input type="radio" name="category" value="참 잘했어요" class="sr-only" required><span class="text-2xl">💮</span><span class="text-sm font-medium">참 잘했어요</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-                                    <input type="radio" name="category" value="effort" class="sr-only"><span class="text-2xl">😢</span><span class="text-sm font-medium">분발하세요</span>
+                                    <input type="radio" name="category" value="분발하세요" class="sr-only"><span class="text-2xl">😢</span><span class="text-sm font-medium">분발하세요</span>
                                 </label>
                                 <label class="border rounded-lg p-3 cursor-pointer flex flex-col items-center gap-2 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
-                                    <input type="radio" name="category" value="worksheet" class="sr-only"><span class="text-2xl">📝</span><span class="text-sm font-medium">학습지 완료</span>
+                                    <input type="radio" name="category" value="학습지 완료" class="sr-only"><span class="text-2xl">📝</span><span class="text-sm font-medium">학습지 완료</span>
                                 </label>
                             </div>
                         </div>
 
-                        <button type="submit" id="submitRecordBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg flex justify-center gap-2">
+                        <button type="submit" id="submitRecordBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex justify-center gap-2 cursor-pointer transition">
                             선택한 학생들에게 부여하기
                         </button>
                     </form>
@@ -154,42 +156,45 @@
         </div>
     </main>
 
-    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <script>
-        // 🚨 본인의 앱스 스크립트 웹앱 URL로 변경하세요!
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzUz3664bERc2N9qc9ltla4LuHcRl7bFEDILIXf_08EbT3Zbn-3Y1TzpyGPaoEjtSfc/exec";
-        let isTeacherMode = false;
-        let allStudents = []; // 구글시트에서 불러온 전체 명렬표 저장용
+        // 🚨 선생님께서 주신 웹앱 주소를 전역 변수로 설정했습니다! 🚨
+        const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxW-Kv6RuSUoRk6UrxWzpoU3NNY647gmZkhgvWCzFcuGE7KRpEfkb0DEYnP5g6n9b4N/exec";
 
+        let isTeacherMode = false;
+        let allStudents = [];
+
+        // 오늘 날짜를 기본값으로 설정
         document.getElementById('recordDate').valueAsDate = new Date();
 
-        // 1️⃣ 구글 시트에서 학생 명단 불러오기
+        // 1️⃣ 구글 시트에서 학생 명단 불러오기 (fetch를 통한 POST 방식)
         async function fetchStudentList() {
             try {
                 const classSelect = document.getElementById('classSelect');
                 classSelect.innerHTML = '<option value="" disabled selected>명렬표를 불러오는 중입니다 <span class="loader align-middle ml-2 w-4 h-4"></span></option>';
                 
-                const response = await fetch(GAS_URL, {
+                const response = await fetch(MY_GAS_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'getStudentList' })
                 });
                 const result = await response.json();
                 
                 if (result.success) {
                     allStudents = result.data;
-                    updateClassSelect(); // 드롭다운에 반 목록 렌더링
+                    updateClassSelect();
                 } else {
-                    showToast("명렬표 로드 실패", "error");
+                    showToast("명렬표 로드 실패: " + result.message, "error");
                 }
             } catch (e) {
                 showToast("명렬표를 불러오는 중 오류가 발생했습니다.", "error");
+                console.error(e);
             }
         }
 
-        // 2️⃣ 불러온 데이터로 [반 선택] 드롭다운 만들기
+        // 2️⃣ 불러온 데이터로 반 선택 드롭다운 만들기
         function updateClassSelect() {
-            // 전체 학생 데이터에서 '반'만 추출하고 중복제거 & 정렬
             const classes = [...new Set(allStudents.map(s => s.className))].sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
             const select = document.getElementById('classSelect');
             
@@ -198,13 +203,12 @@
                 select.innerHTML += `<option value="${cls}">${cls}</option>`;
             });
 
-            // 반을 선택했을 때 학생 그리드 다시 그리기
             select.addEventListener('change', (e) => {
                 renderStudentsGrid(e.target.value);
             });
         }
 
-        // 3️⃣ 선택한 반의 학생들만 그리드(버튼)로 그리기
+        // 3️⃣ 선택한 반의 학생들만 그리드로 그리기
         function renderStudentsGrid(selectedClass) {
             const studentGrid = document.getElementById('studentGrid');
             const classStudents = allStudents.filter(s => s.className === selectedClass);
@@ -215,8 +219,7 @@
             }
 
             studentGrid.innerHTML = classStudents.map(student => {
-                // 시트에 기록할 때는 "학번 이름" 포맷으로 넘기도록 value 설정
-                const val = `${student.studentNum} ${student.name}`;
+                const val = `${student.studentNum} ${student.name}`; // "10101 홍길동" 형식으로 시트에 저장
                 return `
                 <label class="cursor-pointer block relative">
                     <input type="checkbox" name="selectedStudents" value="${val}" class="peer sr-only">
@@ -228,7 +231,6 @@
             `}).join('');
         }
 
-        // 전체 선택 / 해제
         document.getElementById('selectAllBtn').addEventListener('click', () => {
             document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = true);
         });
@@ -236,18 +238,19 @@
             document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
         });
 
-        // --- 로그인 및 화면 전환 로직 ---
+        // 로그인 및 탭 전환
         const modal = document.getElementById('teacherAuthModal');
         document.getElementById('modeToggleBtn').addEventListener('click', () => {
             if (!isTeacherMode) { modal.classList.remove('hidden-view'); } 
-            else { location.reload(); } // 학생모드 전환시 새로고침
+            else { location.reload(); }
         });
         document.getElementById('closeAuthModalBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
         document.getElementById('cancelAuthBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
 
+        // 🚨 비밀번호를 1207로 변경 완료! 🚨
         document.getElementById('teacherAuthForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            if (document.getElementById('teacherPasswordInput').value === '1234') {
+            if (document.getElementById('teacherPasswordInput').value === '1207') {
                 isTeacherMode = true; 
                 modal.classList.add('hidden-view');
                 document.getElementById('modeToggleText').innerText = "학생용으로 전환";
@@ -255,13 +258,14 @@
                 document.getElementById('teacherTabs').classList.remove('hidden-view');
                 document.getElementById('recordTab').classList.remove('hidden-view');
                 
-                // ⭐ 교사 로그인 성공 시 시트에서 명렬표 불러오기 실행
+                // 로그인 성공 시 명렬표 로드
                 fetchStudentList(); 
-
-            } else { showToast("비밀번호가 일치하지 않습니다.", "error"); }
+            } else { 
+                showToast("비밀번호가 일치하지 않습니다.", "error"); 
+            }
         });
 
-        // --- 도장 일괄 부여 전송 로직 ---
+        // 도장 일괄 부여 전송
         document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitRecordBtn');
@@ -280,23 +284,23 @@
                 names: namesArray,
                 date: document.getElementById('recordDate').value,
                 session: document.getElementById('recordSession').value,
-                category: document.querySelector('input[name="category"]:checked').value,
-                score: ""
+                category: document.querySelector('input[name="category"]:checked').value
             };
 
             try {
                 btn.innerHTML = `<span class="loader border-white border-t-indigo-200"></span> 전송 중...`;
                 btn.disabled = true;
 
-                const response = await fetch(GAS_URL, {
+                // 통신에 전역 변수 MY_GAS_URL을 사용합니다.
+                const response = await fetch(MY_GAS_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 const result = await response.json();
                 
                 if (result.success) {
                     showToast(`${namesArray.length}명에게 도장을 부여했습니다!`, "success");
-                    // 전송 후 체크 해제
                     document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
                 } else { showToast("오류: " + result.message, "error"); }
             } catch (error) {
