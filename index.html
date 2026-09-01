@@ -12,20 +12,14 @@
         .hidden-view { display: none !important; }
         .tab-active { border-bottom: 2px solid #6366f1; color: #4f46e5; font-weight: 600; }
         .tab-inactive { color: #6b7280; font-weight: 500; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
-        
         .toast-enter { animation: toastIn 0.3s ease-out forwards; }
         .toast-exit { animation: toastOut 0.3s ease-in forwards; }
         @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
-        
-        .loader {
-            border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1;
-            width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block;
-        }
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -58,6 +52,7 @@
                 <button id="closeAuthModalBtn" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="teacherAuthForm" class="space-y-4">
+                <!-- 플레이스홀더 수정 완료 -->
                 <input type="password" id="teacherPasswordInput" placeholder="비밀번호 입력" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" id="cancelAuthBtn" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg">취소</button>
@@ -71,21 +66,54 @@
     <main class="flex-grow overflow-y-auto pb-20">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             
-            <div id="teacherTabs" class="hidden-view mb-6 border-b flex gap-6">
-                <button id="tab-record" class="pb-3 px-1 tab-active">기록 및 도장 부여</button>
-                <button id="tab-notice" class="pb-3 px-1 tab-inactive">알림사항 관리</button>
-            </div>
-
             <!-- Student View -->
             <div id="studentView">
+                <!-- 학생 화면 알림사항 추가 -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl shadow-sm p-5 mb-6">
+                    <h3 class="font-bold text-blue-800 mb-2 flex items-center gap-2"><i class="fa-solid fa-bullhorn"></i> 일본어 수업 알림</h3>
+                    <p class="text-sm text-blue-900 leading-relaxed">
+                        안녕하세요! 여러분의 일본어 수업 포트폴리오입니다.<br>
+                        이름과 비밀번호(학번)를 입력하여 지금까지 획득한 도장을 확인해 보세요. 😊
+                    </p>
+                </div>
+
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-indigo-500"></i> 나의 기록 찾기</h2>
                     <form id="searchForm" class="flex flex-col sm:flex-row gap-3">
                         <input type="text" id="searchName" placeholder="이름 (예: 홍길동)" required class="flex-1 px-4 py-2 border rounded-lg">
                         <input type="password" id="searchPassword" placeholder="비밀번호(학번)" required class="flex-1 px-4 py-2 border rounded-lg">
-                        <button type="submit" id="searchBtn" class="bg-indigo-600 text-white py-2 px-6 rounded-lg">조회하기</button>
+                        <button type="submit" id="searchBtn" class="bg-indigo-600 text-white py-2 px-6 rounded-lg whitespace-nowrap min-w-[120px]">
+                            조회하기
+                        </button>
                     </form>
                 </div>
+
+                <!-- 검색 결과창 -->
+                <div id="studentResultView" class="hidden-view bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 animate-[fadeIn_0.5s_ease-out]">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-700">
+                        <i class="fa-solid fa-clipboard-check"></i> <span id="resultStudentName">홍길동</span> 학생의 기록
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 rounded-t-lg">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 rounded-tl-lg">날짜</th>
+                                    <th scope="col" class="px-6 py-3">회차</th>
+                                    <th scope="col" class="px-6 py-3 rounded-tr-lg">획득 도장</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultTableBody">
+                                <!-- 기록이 여기에 표시됩니다 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teacher Tabs (Hidden initially) -->
+            <div id="teacherTabs" class="hidden-view mb-6 border-b flex gap-6">
+                <button id="tab-record" class="pb-3 px-1 tab-active">기록 및 도장 부여</button>
+                <button id="tab-notice" class="pb-3 px-1 tab-inactive">알림사항 관리 (준비중)</button>
             </div>
 
             <!-- Teacher Record View -->
@@ -98,6 +126,7 @@
                             <div><label class="block text-sm font-medium mb-1">날짜</label><input type="date" id="recordDate" required class="w-full px-4 py-2 border rounded-lg"></div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">회차 선택</label>
+                                <!-- 10회차까지 확장 -->
                                 <select id="recordSession" required class="w-full px-4 py-2 border rounded-lg">
                                     <option value="" disabled selected>회차 선택</option>
                                     <option value="1회차">1회차</option><option value="2회차">2회차</option>
@@ -109,7 +138,7 @@
                             </div>
                         </div>
 
-                        <!-- 반 선택 및 학생 다중 선택 UI -->
+                        <!-- 반 및 학생 선택 UI -->
                         <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                             <label class="block text-sm font-bold text-indigo-700 mb-2">1. 반 선택</label>
                             <select id="classSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
@@ -123,7 +152,6 @@
                                     <button type="button" id="deselectAllBtn" class="text-xs px-3 py-1.5 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-md transition cursor-pointer">선택 해제</button>
                                 </div>
                             </div>
-                            <!-- 동적 학생 목록 그리드 -->
                             <div id="studentGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-64 overflow-y-auto p-3 border border-gray-200 rounded-lg bg-white">
                                 <div class="col-span-full text-center text-gray-400 text-sm py-4">반을 먼저 선택해주세요.</div>
                             </div>
@@ -152,14 +180,13 @@
                 </div>
             </div>
             
-            <div id="noticeTab" class="hidden-view"><div class="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500 py-10">알림사항 준비중</div></div>
         </div>
     </main>
 
     <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <script>
-        // 🚨 선생님께서 주신 웹앱 주소를 전역 변수로 설정했습니다! 🚨
+        // 🚨 선생님 웹앱 주소 적용 완료 🚨
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxW-Kv6RuSUoRk6UrxWzpoU3NNY647gmZkhgvWCzFcuGE7KRpEfkb0DEYnP5g6n9b4N/exec";
 
         let isTeacherMode = false;
@@ -168,7 +195,7 @@
         // 오늘 날짜를 기본값으로 설정
         document.getElementById('recordDate').valueAsDate = new Date();
 
-        // 1️⃣ 구글 시트에서 학생 명단 불러오기 (fetch를 통한 POST 방식)
+        // [기능 1] 학생 명단 불러오기
         async function fetchStudentList() {
             try {
                 const classSelect = document.getElementById('classSelect');
@@ -189,26 +216,17 @@
                 }
             } catch (e) {
                 showToast("명렬표를 불러오는 중 오류가 발생했습니다.", "error");
-                console.error(e);
             }
         }
 
-        // 2️⃣ 불러온 데이터로 반 선택 드롭다운 만들기
         function updateClassSelect() {
             const classes = [...new Set(allStudents.map(s => s.className))].sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
             const select = document.getElementById('classSelect');
-            
             select.innerHTML = '<option value="" disabled selected>반을 선택해주세요</option>';
-            classes.forEach(cls => {
-                select.innerHTML += `<option value="${cls}">${cls}</option>`;
-            });
-
-            select.addEventListener('change', (e) => {
-                renderStudentsGrid(e.target.value);
-            });
+            classes.forEach(cls => select.innerHTML += `<option value="${cls}">${cls}</option>`);
+            select.addEventListener('change', (e) => renderStudentsGrid(e.target.value));
         }
 
-        // 3️⃣ 선택한 반의 학생들만 그리드로 그리기
         function renderStudentsGrid(selectedClass) {
             const studentGrid = document.getElementById('studentGrid');
             const classStudents = allStudents.filter(s => s.className === selectedClass);
@@ -219,7 +237,7 @@
             }
 
             studentGrid.innerHTML = classStudents.map(student => {
-                const val = `${student.studentNum} ${student.name}`; // "10101 홍길동" 형식으로 시트에 저장
+                const val = `${student.studentNum} ${student.name}`; 
                 return `
                 <label class="cursor-pointer block relative">
                     <input type="checkbox" name="selectedStudents" value="${val}" class="peer sr-only">
@@ -238,16 +256,16 @@
             document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
         });
 
-        // 로그인 및 탭 전환
+        // [기능 2] 선생님 모드 전환
         const modal = document.getElementById('teacherAuthModal');
         document.getElementById('modeToggleBtn').addEventListener('click', () => {
             if (!isTeacherMode) { modal.classList.remove('hidden-view'); } 
-            else { location.reload(); }
+            else { location.reload(); } // 교사모드 종료 시 새로고침
         });
         document.getElementById('closeAuthModalBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
         document.getElementById('cancelAuthBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
 
-        // 🚨 비밀번호를 1207로 변경 완료! 🚨
+        // 선생님 인증 처리
         document.getElementById('teacherAuthForm').addEventListener('submit', (e) => {
             e.preventDefault();
             if (document.getElementById('teacherPasswordInput').value === '1207') {
@@ -257,26 +275,22 @@
                 document.getElementById('studentView').classList.add('hidden-view');
                 document.getElementById('teacherTabs').classList.remove('hidden-view');
                 document.getElementById('recordTab').classList.remove('hidden-view');
-                
-                // 로그인 성공 시 명렬표 로드
                 fetchStudentList(); 
             } else { 
                 showToast("비밀번호가 일치하지 않습니다.", "error"); 
             }
         });
 
-        // 도장 일괄 부여 전송
+        // [기능 3] 도장 일괄 부여 
         document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitRecordBtn');
             const originalBtnHtml = btn.innerHTML;
-            
             const selectedCheckboxes = document.querySelectorAll('input[name="selectedStudents"]:checked');
             const namesArray = Array.from(selectedCheckboxes).map(cb => cb.value);
 
             if (namesArray.length === 0) {
-                showToast("학생을 1명 이상 선택해주세요.", "error");
-                return;
+                showToast("학생을 1명 이상 선택해주세요.", "error"); return;
             }
 
             const payload = {
@@ -291,7 +305,6 @@
                 btn.innerHTML = `<span class="loader border-white border-t-indigo-200"></span> 전송 중...`;
                 btn.disabled = true;
 
-                // 통신에 전역 변수 MY_GAS_URL을 사용합니다.
                 const response = await fetch(MY_GAS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -306,11 +319,67 @@
             } catch (error) {
                 showToast("통신 오류가 발생했습니다.", "error");
             } finally {
+                btn.innerHTML = originalBtnHtml; btn.disabled = false;
+            }
+        });
+
+        // [기능 4] 학생 기록 검색 (새로 추가된 기능!)
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('searchBtn');
+            const name = document.getElementById('searchName').value.trim();
+            const password = document.getElementById('searchPassword').value.trim();
+            
+            if(!name || !password) return;
+
+            const originalBtnHtml = btn.innerHTML;
+            try {
+                btn.innerHTML = `<span class="loader border-white border-t-indigo-200 w-4 h-4"></span>`;
+                btn.disabled = true;
+                
+                const response = await fetch(MY_GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'searchStudent', name: name, password: password })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('resultStudentName').innerText = name;
+                    const tbody = document.getElementById('resultTableBody');
+                    
+                    if(result.records.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">아직 부여받은 도장이 없습니다.</td></tr>`;
+                    } else {
+                        // 최신 기록이 위로 오게 정렬
+                        result.records.reverse(); 
+                        tbody.innerHTML = result.records.map(r => {
+                            let icon = r.category === '참 잘했어요' ? '💮' : r.category === '학습지 완료' ? '📝' : '😢';
+                            return `
+                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${r.date}</td>
+                                    <td class="px-6 py-4">${r.session}</td>
+                                    <td class="px-6 py-4 font-semibold flex items-center gap-2"><span class="text-xl">${icon}</span> ${r.category}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                    
+                    document.getElementById('studentResultView').classList.remove('hidden-view');
+                    showToast("기록을 성공적으로 불러왔습니다.", "success");
+                } else {
+                    showToast(result.message, "error");
+                    document.getElementById('studentResultView').classList.add('hidden-view');
+                }
+            } catch (e) {
+                showToast("검색 중 오류가 발생했습니다.", "error");
+            } finally {
                 btn.innerHTML = originalBtnHtml;
                 btn.disabled = false;
             }
         });
 
+        // 토스트 알림 기능
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
