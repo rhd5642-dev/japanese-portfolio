@@ -246,14 +246,10 @@
 
         let isTeacherMode = false;
         let allStudents = [];
-        let targetRecordToDelete = null; // 삭제 대상을 저장할 변수
+        let targetRecordToDelete = null;
 
-        // 오늘 날짜를 기본값으로 설정
         document.getElementById('recordDate').valueAsDate = new Date();
 
-        // ----------------------------------------------------
-        // [공통] 학생 명단 불러오기 및 셀렉트박스 업데이트
-        // ----------------------------------------------------
         async function fetchStudentList() {
             try {
                 const classSelect = document.getElementById('classSelect');
@@ -293,43 +289,35 @@
                 selectManage.innerHTML += option;
             });
             
-            // 각 셀렉트박스 체인지 이벤트 연결
             selectRecord.addEventListener('change', (e) => renderStudentsGrid(e.target.value));
             selectManage.addEventListener('change', (e) => renderManageStudentsList(e.target.value));
         }
 
-        // ----------------------------------------------------
-        // [선생님 모드] 전환 및 탭 로직
-        // ----------------------------------------------------
         const modal = document.getElementById('teacherAuthModal');
         document.getElementById('modeToggleBtn').addEventListener('click', () => {
             if (!isTeacherMode) { modal.classList.remove('hidden-view'); } 
-            else { location.reload(); } // 교사모드 종료 시 새로고침
+            else { location.reload(); }
         });
         document.getElementById('closeAuthModalBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
         document.getElementById('cancelAuthBtn').addEventListener('click', () => modal.classList.add('hidden-view'));
 
-        // 선생님 인증 처리
         document.getElementById('teacherAuthForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            // 비밀번호 1207 확인
             if (document.getElementById('teacherPasswordInput').value === '1207') {
                 isTeacherMode = true; 
                 modal.classList.add('hidden-view');
                 document.getElementById('modeToggleText').innerText = "학생용으로 전환";
                 
-                // 학생 화면 숨기기, 교사 화면 보이기
                 document.getElementById('studentView').classList.add('hidden-view');
                 document.getElementById('teacherTabs').classList.remove('hidden-view');
                 document.getElementById('recordTab').classList.remove('hidden-view');
                 
-                fetchStudentList(); // 명단 로드
+                fetchStudentList();
             } else { 
                 showToast("비밀번호가 일치하지 않습니다.", "error"); 
             }
         });
 
-        // 탭 전환 로직
         const tabRecord = document.getElementById('tab-record');
         const tabManage = document.getElementById('tab-manage');
         const recordTab = document.getElementById('recordTab');
@@ -349,9 +337,6 @@
             recordTab.classList.add('hidden-view');
         });
 
-        // ----------------------------------------------------
-        // [교사 - 도장 일괄 부여 기능 (자동 회차 계산 적용)]
-        // ----------------------------------------------------
         function renderStudentsGrid(selectedClass) {
             const studentGrid = document.getElementById('studentGrid');
             const classStudents = allStudents.filter(s => s.className === selectedClass);
@@ -381,46 +366,51 @@
             document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
         });
 
+        // ----------------------------------------------------
+        // [수정된 핵심 부분] 순차 처리 방식으로 변경
+        // ----------------------------------------------------
         document.getElementById('addRecordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitRecordBtn');
             const originalBtnHtml = btn.innerHTML;
-            const selectedCheckboxes = document.querySelectorAll('input[name="selectedStudents"]:checked');
+            const selectedCheckboxes = Array.from(document.querySelectorAll('input[name="selectedStudents"]:checked'));
 
             if (selectedCheckboxes.length === 0) {
-                showToast("학생을 1명 이상 선택해주세요.", "error"); return;
+                showToast("학생을 1명 이상 선택해주세요.", "error"); 
+                return;
             }
 
             const recordDate = document.getElementById('recordDate').value;
             const category = document.querySelector('input[name="category"]:checked').value;
 
-            try {
-                btn.innerHTML = `<span class="loader border-white border-t-indigo-200 w-5 h-5"></span> 카운팅 및 전송 중...`;
-                btn.disabled = true;
+            btn.disabled = true;
+            let successCount = 0;
 
-                // 각 선택된 학생별로 기존 수령 도장 개수를 조회하여 회차를 자동 계산 후 부여
-                const promises = Array.from(selectedCheckboxes).map(async (cb) => {
-                    const studentNum = cb.getAttribute('data-num');
-                    const studentName = cb.getAttribute('data-name');
-                    const fullNameVal = cb.value;
+            // 동시에 보내지 않고, 한 명씩 순차적으로 전송
+            for (let i = 0; i < selectedCheckboxes.length; i++) {
+                const cb = selectedCheckboxes[i];
+                const studentNum = cb.getAttribute('data-num');
+                const studentName = cb.getAttribute('data-name');
+                const fullNameVal = cb.value;
 
-                    let nextSession = "1회차";
-                    try {
-                        const searchRes = await fetch(MY_GAS_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify({ action: 'searchStudent', name: studentName, password: studentNum })
-                        });
-                        const searchData = await searchRes.json();
-                        if (searchData.success && searchData.records) {
-                            const currentCount = searchData.records.length;
-                            nextSession = `${currentCount + 1}회차`;
-                        }
-                    } catch (err) {
-                        console.error(`기록 계산 오류 (${studentName}):`, err);
+                // 버튼에 현재 진행 상태 표시
+                btn.innerHTML = `<span class="loader border-white border-t-indigo-200 w-5 h-5"></span> 처리중 (${i + 1}/${selectedCheckboxes.length})...`;
+
+                let nextSession = "1회차";
+                try {
+                    // 1. 해당 학생의 기존 도장 개수 조회
+                    const searchRes = await fetch(MY_GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'searchStudent', name: studentName, password: studentNum })
+                    });
+                    const searchData = await searchRes.json();
+                    if (searchData.success && searchData.records) {
+                        nextSession = `${searchData.records.length + 1}회차`;
                     }
 
-                    return fetch(MY_GAS_URL, {
+                    // 2. 계산된 회차로 도장 기록 추가
+                    const addRes = await fetch(MY_GAS_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({
@@ -431,24 +421,22 @@
                             category: category
                         })
                     });
-                });
-
-                await Promise.all(promises);
-
-                showToast(`${selectedCheckboxes.length}명에게 회차가 자동 계산되어 도장이 부여되었습니다!`, "success");
-                document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
-
-            } catch (error) {
-                showToast("통신 및 처리 중 오류가 발생했습니다.", "error");
-            } finally {
-                btn.innerHTML = originalBtnHtml; 
-                btn.disabled = false;
+                    const addData = await addRes.json();
+                    if (addData.success) {
+                        successCount++;
+                    }
+                } catch (err) {
+                    console.error(`처리 실패 (${studentName}):`, err);
+                }
             }
+
+            showToast(`${selectedCheckboxes.length}명 중 ${successCount}명에게 도장을 부여했습니다!`, "success");
+            document.querySelectorAll('input[name="selectedStudents"]').forEach(cb => cb.checked = false);
+
+            btn.innerHTML = originalBtnHtml; 
+            btn.disabled = false;
         });
 
-        // ----------------------------------------------------
-        // [교사 - 기록 조회 및 취소 기능]
-        // ----------------------------------------------------
         function renderManageStudentsList(selectedClass) {
             const list = document.getElementById('manageStudentList');
             const classStudents = allStudents.filter(s => s.className === selectedClass);
@@ -467,7 +455,6 @@
                 </button>
             `}).join('');
             
-            // 반을 바꿀때마다 초기화
             document.getElementById('manageStudentNameTitle').innerHTML = '학생을 선택해주세요';
             document.getElementById('manageResultTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-12 text-center text-gray-500 bg-white">조회할 학생을 왼쪽에서 선택하세요.</td></tr>';
         }
@@ -480,7 +467,6 @@
             tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-12 text-center text-indigo-500 bg-white"><span class="loader align-middle w-5 h-5 mr-2"></span> 기록을 불러오는 중...</td></tr>`;
 
             try {
-                // 기존 searchStudent 액션 재활용
                 const response = await fetch(MY_GAS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -492,7 +478,7 @@
                     if(result.records.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-10 text-center text-gray-500 bg-white">부여받은 도장이 없습니다.</td></tr>`;
                     } else {
-                        result.records.reverse(); // 최신순
+                        result.records.reverse();
                         tbody.innerHTML = result.records.map(r => {
                             let icon = r.category === '참 잘했어요' ? '💮' : r.category === '학습지 완료' ? '📝' : '😢';
                             return `
@@ -518,7 +504,6 @@
             }
         }
 
-        // 삭제 확인 및 실행 로직
         function confirmDeleteRecord(name, studentNum, date, session, category) {
             targetRecordToDelete = { name, studentNum, date, session, category };
             document.getElementById('deleteConfirmMsg').innerHTML = `
@@ -575,9 +560,6 @@
             }
         });
 
-        // ----------------------------------------------------
-        // [학생 - 기록 검색 기능]
-        // ----------------------------------------------------
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('searchBtn');
@@ -605,7 +587,6 @@
                     if(result.records.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500 bg-white">아직 부여받은 도장이 없습니다.</td></tr>`;
                     } else {
-                        // 최신 기록이 위로 오게 정렬
                         result.records.reverse(); 
                         tbody.innerHTML = result.records.map(r => {
                             let icon = r.category === '참 잘했어요' ? '💮' : r.category === '학습지 완료' ? '📝' : '😢';
@@ -633,9 +614,6 @@
             }
         });
 
-        // ----------------------------------------------------
-        // [공통] 토스트 알림 기능
-        // ----------------------------------------------------
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
